@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Input from '@/components/input';
@@ -43,23 +43,20 @@ export default function LoginPage() {
 
     if (!validate()) return;
 
-    console.log({
-      email,
-      password,
-      remember,
-    });
-
     // 👉 Connect backend here
-    mutate({
-      email,
-      password,
-    });
+    mutate(
+      {
+        email,
+        password,
+      },
+      {
+        onSettled: () => {
+          setPassword('');
+        },
+      },
+    );
   };
-  useEffect(() => {
-    if (!isPending) {
-      setPassword('');
-    }
-  }, [isPending]);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ================= LEFT IMAGE ================= */}

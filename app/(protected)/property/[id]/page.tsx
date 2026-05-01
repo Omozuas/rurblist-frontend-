@@ -17,9 +17,11 @@ export default function PropertyDetail() {
   const id = params.id as string;
 
   const { data, error, isLoading } = useGetPropertyById(id);
-  const { data: userData, isLoading: isUserLoading } = useGetCurrentUser();
-  const user = userData?.data;
+  const { data: userData } = useGetCurrentUser();
   const property = data?.data;
+  const currentUserId = userData?.data?.user?._id;
+  const ownerUserId = property?.owner?.user?._id;
+  const isOwner = !!currentUserId && !!ownerUserId && currentUserId === ownerUserId;
 
   if (isLoading) {
     return <PropertyDetailSkeleton />;
@@ -30,7 +32,7 @@ export default function PropertyDetail() {
   /* ================= MAP API IMAGES ================= */
 
   const images: GalleryImage[] =
-    property?.images?.map((img, index) => ({
+    property?.images?.map((img) => ({
       id: img._id,
       src: img.url,
       alt: property.title,
@@ -83,16 +85,18 @@ export default function PropertyDetail() {
           </div>
         </div>
       </div>
-      <OrangeButton
-        variant="orange"
-        className="mx-auto block w-1/2 mb-10"
-        onClick={() => {
-          const propertyId = property?._id ?? '';
-          router.push(`/property/escrow/${propertyId}`);
-        }}
-      >
-        Buy this property
-      </OrangeButton>
+      {!isOwner && (
+        <OrangeButton
+          variant="orange"
+          className="mx-auto block w-1/2 mb-10"
+          onClick={() => {
+            const propertyId = property?._id ?? '';
+            router.push(`/property/escrow/${propertyId}`);
+          }}
+        >
+          Buy this property
+        </OrangeButton>
+      )}
       <PropertyMap
         address={property?.location.address}
         latitude={property?.location.coordinates.coordinates[1]}

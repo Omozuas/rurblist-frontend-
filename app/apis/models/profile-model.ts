@@ -1,4 +1,4 @@
 export interface ProfileImage {
-  url: any
-  public_id: any
+  url: string | null;
+  public_id: string | null;
 }

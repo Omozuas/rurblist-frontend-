@@ -8,48 +8,13 @@ import {
   PriceFilter,
   TypeFilter,
 } from '@/components/dropdown/filter-dropdown';
-import PropertyBanner from '@/components/propety-details/property-banner';
-import PropertyCard from '@/components/propety-details/property-card';
+import PropertyBanner from '@/components/property-details/property-banner';
+import PropertyCard from '@/components/property-details/property-card';
 import { useRouter } from 'next/navigation';
 import { useSearchProperties } from '@/app/apis/mutations/use-property/use-search-properties';
 import LoadMoreSkeleton from '@/components/property-cm/load-more-skeleton';
 import { useAuth } from '@/components/layout/auth-provider';
 import PropertiesPageSkeleton from '@/components/property-cm/properties-page-skeleton';
-
-const mockComments = [
-  {
-    id: '1',
-    profileImage: '/image/profile-image2.jpg',
-    name: 'Alfred James',
-    date: 'Jan 18, 2025',
-    text: "I'm interested in booking a virtual tour. Is it still available?",
-    replies: [
-      {
-        id: '1-1',
-        profileImage: '/image/profile-img.png',
-        name: 'Emily James',
-        date: 'Jan 18, 2025',
-        text: 'Yes! Virtual tours are available this week. What date works for you?',
-        role: 'Agent',
-      },
-    ],
-  },
-  {
-    id: '2',
-    profileImage: '/image/profile-img.png',
-    name: 'Alfred James',
-    date: 'Jan 18, 2025',
-    text: "I'm interested in booking a virtual tour. Is it still available?",
-    role: 'Agent',
-  },
-  {
-    id: '3',
-    profileImage: '/image/profile-img.png',
-    name: 'Alfred James',
-    date: 'Jan 18, 2025',
-    text: 'Yes! Virtual tours are available this week. What date works for you?',
-  },
-];
 
 export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +75,6 @@ export default function PropertiesPage() {
     return () => observer.disconnect();
   }, [hasNextPage, fetchNextPage]);
 
-  console.log('QUERY DATA:', data); // 👈 should show pages
 
   const STATUS_MAP: Record<string, string> = {
     For_Sale: 'For Sale',

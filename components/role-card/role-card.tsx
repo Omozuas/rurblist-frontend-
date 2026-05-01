@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils"
 import { StaticImport } from "next/dist/shared/lib/get-img-props";
 import Image from "next/image";
-import Link from "next/link";
 
 interface RoleCardProps {
   title: string

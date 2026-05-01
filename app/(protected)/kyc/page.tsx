@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { TermsContainer } from '@/components/terms-container/terms-container'
 import { OrangeButton } from '@/components/button/button'
 import { Footer } from '@/components/footer/footer'
+import { IconImage } from '@/components/icon-image/icon-image'
+import { cn } from '@/lib/utils'
 
 export default function KYCPage() {
   const router = useRouter();
@@ -22,8 +26,9 @@ export default function KYCPage() {
       input.accept = 'video/*,image/*'
     }
     
-    input.onchange = (e: any) => {
-      const file = e.target.files?.[0]
+    input.onchange = (event: Event) => {
+      const target = event.target as HTMLInputElement | null
+      const file = target?.files?.[0]
       if (file) {
         setUploadedFiles(prev => ({ ...prev, [type]: true }))
       }
@@ -161,9 +166,4 @@ export default function KYCPage() {
     </div>
   )
 }
-
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
-import { IconImage } from '@/components/icon-image/icon-image'
-import { useRouter } from 'next/navigation'
 

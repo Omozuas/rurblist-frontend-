@@ -146,11 +146,12 @@ export default function Home() {
           </div>
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
             <div className="relative aspect-4/3 overflow-hidden rounded-xl bg-muted">
-              {/* Replace src with your house image path, e.g. /how-it-works-house.jpg */}
-              <img
+              <Image
                 src="/Rectangle.svg"
                 alt="Modern house with pool"
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
             <div className="space-y-8 sm:space-y-10">

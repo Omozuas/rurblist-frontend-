@@ -27,6 +27,14 @@ export type BlobResponse = {
   blob: Blob;
   headers: Record<string, string>;
 };
+
+type ParsedApiResponse = {
+  data?: unknown;
+  message?: string | string[];
+  statusCode?: number;
+  error?: string;
+};
+
 export async function request<T = unknown>(
   method: HttpMethod,
   path: string,
@@ -173,13 +181,10 @@ export async function request<T = unknown>(
     // =========================
     if (responseType === 'blob') {
       if (!response.ok) {
-        let message = 'Download failed';
-
-        const err = await response.json();
-        message = err.message;
+        const err = (await response.json()) as ParsedApiResponse;
 
         return buildErrorResponse(
-          getErrorMessage(err) ?? err?.message ?? 'Something went wrong',
+          getErrorMessage(err) ?? 'Something went wrong',
           err?.statusCode ?? response.status,
           err?.error ?? 'Download failed',
         );
@@ -200,23 +205,23 @@ export async function request<T = unknown>(
     // =========================
     const contentType = response.headers.get('content-type');
 
-    let parsed: any = null;
+    let parsed: ParsedApiResponse | null = null;
 
     if (contentType?.includes('application/json')) {
-      parsed = await response.json();
+      parsed = (await response.json()) as ParsedApiResponse;
     }
 
-    if (!response.ok || parsed?.error || parsed?.statusCode >= 400) {
+    if (!response.ok || parsed?.error || (parsed?.statusCode ?? 0) >= 400) {
       return buildErrorResponse(
-        getErrorMessage(parsed) ?? parsed?.message ?? 'Something went wrong',
+        getErrorMessage(parsed) ?? 'Something went wrong',
         parsed?.statusCode ?? response.status,
         parsed?.error ?? 'Request failed',
       );
     }
 
     return {
-      data: parsed.data,
-      message: parsed?.message ?? 'Success',
+      data: parsed?.data as T,
+      message: getErrorMessage(parsed) ?? 'Success',
       statusCode: response.status,
     };
   } catch (error) {

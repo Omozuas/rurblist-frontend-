@@ -146,6 +146,7 @@ export default function EscrowStepOne({ formData, updateForm, isLoading, onNext 
 
             {preview && (
               <div className="relative flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={preview} alt="preview" className="w-40 h-40 object-cover rounded-lg" />
                 <button
                   type="button"

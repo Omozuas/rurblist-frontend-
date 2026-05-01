@@ -1,7 +1,6 @@
 'use client';
 
 import { useUploadProperty } from '@/app/apis/mutations/use-property/use-post-property';
-import { compressImage } from '@/app/apis/utils/compress-image';
 import ModalHeader from '@/components/agent-c/modal/headder-model';
 import { OrangeButton } from '@/components/button/button';
 import Dropdown from '@/components/dropdown/dropdown';
@@ -114,7 +113,7 @@ export default function AddNewPropertyPage() {
     lat: '',
     lng: '',
   });
-  const [compressing, setCompressing] = useState(false);
+  const compressing = false;
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);

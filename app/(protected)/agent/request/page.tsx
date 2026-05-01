@@ -252,6 +252,7 @@ function UploadBox({
 
         {/* IMAGE */}
         {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="preview" className="h-20 w-20 object-cover rounded-md" />
         ) : fileName ? (
           <div className="flex items-center gap-2 text-sm text-gray-700">

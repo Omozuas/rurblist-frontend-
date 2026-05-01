@@ -7,7 +7,7 @@ import { OrangeButton } from '@/components/button/button';
 import { NavLink } from './nav-links';
 import { getNavbarRoutes } from '@/app/apis/utils/get-navbar-routes';
 import { useAuth } from '../layout/auth-provider';
-import UserAvatar from '../profile-image/user-avater';
+import UserAvatar from '../profile-image/user-avatar';
 import { Role } from '@/app/apis/utils/routes';
 import { useLogout } from '@/app/apis/mutations/use-auth/use-logout';
 
@@ -21,12 +21,11 @@ export default function Navbar() {
   const safeUser = user?.user;
 
   const avatarName = safeUser?.fullName ?? 'User';
-  const avatarImage = safeUser?.profileImage?.url;
-  const roles = safeUser?.roles ?? [];
-  const navRoutes = useMemo(() => {
-    console.log('Calculating navbar routes for user:', user);
-    return getNavbarRoutes(roles as Role[]);
-  }, [user]);
+  const avatarImage = safeUser?.profileImage?.url ?? user?.agent?.selfieUrl?.url ?? undefined;
+  const navRoutes = useMemo(
+    () => getNavbarRoutes((safeUser?.roles ?? []) as Role[]),
+    [safeUser?.roles],
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

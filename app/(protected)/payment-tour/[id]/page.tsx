@@ -13,7 +13,7 @@ export default function MakePaymentTourPage() {
   const params = useParams();
   const id = params.id as string;
   const [method, setMethod] = useState<string>('bank_transfer');
-  const { data, isLoading } = useGetTourById(id);
+  const { data } = useGetTourById(id);
   const { mutate, isPending } = usePayForTour();
 
   useEffect(() => {

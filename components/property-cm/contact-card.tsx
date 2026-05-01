@@ -1,10 +1,13 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { OrangeButton } from '@/components/button/button';
 import ProfileImage from '@/components/profile-image/profile-image';
 import { useState } from 'react';
-import BookTourModal from './book-tour/book-tour-model';
-import InspectionFeeModal from './book-tour/inspection-fee-model';
+
+const BookTourModal = dynamic(() => import('./book-tour/book-tour-model'), {
+  ssr: false,
+});
 
 interface ContactCardProps {
   agentImage: string;
@@ -30,7 +33,7 @@ export default function ContactCard({
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [isCallOpen, setIsCallOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
-  const [iscontinueTourOpen, setIscontinueTourOpen] = useState(false);
+
   return (
     <div className="w-full max-w-full lg:max-w-105">
       {/* Heading */}
@@ -118,33 +121,41 @@ export default function ContactCard({
           </OrangeButton>
         </div>
       </div>
-      <BookTourModal
-        isOpen={isTourOpen}
-        propertyId={propertyId}
-        agentId={agentId}
-        inspectionFee={inspectionFee}
-        onClose={() => setIsTourOpen(false)}
-        tourType="in-person"
-        location={location}
-      />
-      <BookTourModal
-        isOpen={isCallOpen}
-        location={'Phone Call'}
-        propertyId={propertyId}
-        agentId={agentId}
-        inspectionFee={inspectionFee}
-        onClose={() => setIsCallOpen(false)}
-        tourType="call"
-      />
-      <BookTourModal
-        inspectionFee={inspectionFee}
-        propertyId={propertyId}
-        agentId={agentId}
-        isOpen={isInspectionOpen}
-        onClose={() => setIsInspectionOpen(false)}
-        tourType="inspection"
-        location={location}
-      />
+      {isTourOpen && (
+        <BookTourModal
+          isOpen={isTourOpen}
+          propertyId={propertyId}
+          agentId={agentId}
+          inspectionFee={inspectionFee}
+          onClose={() => setIsTourOpen(false)}
+          tourType="in-person"
+          location={location}
+        />
+      )}
+
+      {isCallOpen && (
+        <BookTourModal
+          isOpen={isCallOpen}
+          location="Phone Call"
+          propertyId={propertyId}
+          agentId={agentId}
+          inspectionFee={inspectionFee}
+          onClose={() => setIsCallOpen(false)}
+          tourType="call"
+        />
+      )}
+
+      {isInspectionOpen && (
+        <BookTourModal
+          inspectionFee={inspectionFee}
+          propertyId={propertyId}
+          agentId={agentId}
+          isOpen={isInspectionOpen}
+          onClose={() => setIsInspectionOpen(false)}
+          tourType="inspection"
+          location={location}
+        />
+      )}
     </div>
   );
 }

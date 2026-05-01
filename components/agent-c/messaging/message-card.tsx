@@ -33,7 +33,6 @@ export default function MessageCard({
   timestamp,
   avatar,
   tour,
-  id,
 }: MessageCardProps) {
   const [openModal, setOpenModal] = useState(false);
   return (

@@ -1,11 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react";
 import EmptyPropertyState from "@/components/property-cm/list-pr/empty-property";
 import PropertyCard from "@/components/property-cm/property-card";
 import PropertySkeletonGrid from "@/components/property-cm/property-loder-grid";
 import { useGetMyProperties } from "@/app/apis/mutations/use-property/use-get-my-properties";
-import toast from "react-hot-toast";
 
 export default function ListPropertiesPage() {
   const {  data, isLoading, error} = useGetMyProperties();

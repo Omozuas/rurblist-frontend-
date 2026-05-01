@@ -1,4 +1,8 @@
-export function getErrorMessage(response: any): string | null {
+type ErrorResponseLike = {
+  message?: string | string[];
+};
+
+export function getErrorMessage(response: ErrorResponseLike | null | undefined): string | null {
   if (!response) return null;
 
   if (typeof response.message === "string") return response.message;

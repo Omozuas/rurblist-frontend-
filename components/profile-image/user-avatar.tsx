@@ -27,7 +27,7 @@ function getInitials(name?: string) {
 }
 
 export default function UserAvatar({ name, image }: Props) {
-  const color = colors[name?.length! % colors.length];
+  const color = colors[(name?.length ?? 0) % colors.length];
 
   if (image) {
     return (
@@ -36,14 +36,14 @@ export default function UserAvatar({ name, image }: Props) {
         alt="profile"
         width={45}
         height={45}
-        className="rounded-full object-cover"
+        className="h-12 w-12 shrink-0 rounded-full object-cover"
       />
     );
   }
 
   return (
     <div
-      className={`w-12 h-12 rounded-full ${color} flex items-center justify-center text-white font-semibold cursor-pointer`}
+      className={`h-12 w-12 shrink-0 rounded-full ${color} flex items-center justify-center text-white font-semibold cursor-pointer`}
     >
       {getInitials(name)}
     </div>

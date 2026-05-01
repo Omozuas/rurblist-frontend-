@@ -17,6 +17,12 @@ interface GalleryImage {
   url: string;
 }
 
+type UserReference = string | { _id?: string };
+
+function getUserReferenceId(user: UserReference) {
+  return typeof user === 'string' ? user : user._id;
+}
+
 interface PropertyCardProps {
   title: string;
   id: string;
@@ -31,15 +37,14 @@ interface PropertyCardProps {
   likeCount: number;
   unlikeCount: number;
   // comments: CommentType[]
-  listLike: any[];
-  listunlike: any[];
-  savedList: any[]; // users who saved
+  listLike: UserReference[];
+  listunlike: UserReference[];
+  savedList: UserReference[]; // users who saved
   currentUserId: string; // ✅ REQUIRED
   createdAt: string; // ✅ NEW
   agentFee: string;
   commentCount: number;
   type?: string;
-  paymentFrequency?: string;
   verificationStatus?: string;
   onChatClick?: () => void;
 }
@@ -59,7 +64,6 @@ export default function PropertyCard({
   savedList,
   bedrooms,
   agentFee,
-  paymentFrequency,
   commentCount,
   verificationStatus,
   profileImage,
@@ -81,8 +85,8 @@ export default function PropertyCard({
   const { postComment, isPosting } = useCommentMutation(id);
   // ✅ Detect user reaction from backend lists
   const reaction = useMemo<'like' | 'unlike' | null>(() => {
-    const liked = listLike?.some((u) => u === currentUserId || u?._id === currentUserId);
-    const unliked = listunlike?.some((u) => u === currentUserId || u?._id === currentUserId);
+    const liked = listLike?.some((user) => getUserReferenceId(user) === currentUserId);
+    const unliked = listunlike?.some((user) => getUserReferenceId(user) === currentUserId);
 
     if (liked) return 'like';
     if (unliked) return 'unlike';
@@ -94,7 +98,7 @@ export default function PropertyCard({
   const unlikes = unlikeCount;
 
   const isSaved = useMemo(() => {
-    return savedList?.some((u) => u === id || u?._id === id);
+    return savedList?.some((user) => getUserReferenceId(user) === id);
   }, [savedList, id]);
   // ✅ Optimize Cloudinary image
   const optimizeImage = (url: string) => url?.replace('/upload/', '/upload/w_800,q_auto,f_auto/');
