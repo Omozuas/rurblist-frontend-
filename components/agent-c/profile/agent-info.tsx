@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { OrangeButton } from '@/components/button/button';
-import Input from '@/components/input';
 import { IconImage } from '@/components/icon-image/icon-image';
 import Textarea from '@/components/text-area';
 

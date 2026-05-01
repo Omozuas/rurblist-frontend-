@@ -16,7 +16,7 @@ export default function AgentAgreementPage() {
   const setHideNavbar = useLayoutStore((s) => s.setHideNavbar);
   const router = useRouter();
   const { form, reset } = useAgentForm();
-  const { data, isLoading } = useGetCurrentUser();
+  const { data } = useGetCurrentUser();
   const { mutate, isPending } = useCreateAgent(!!data?.data?.agent);
   const [showSuccess, setShowSuccess] = useState(false);
   const today = new Date().toLocaleDateString('en-GB');
@@ -37,7 +37,7 @@ export default function AgentAgreementPage() {
       mutate(payload, {
         onSuccess: () => {
           toast.success('Agent request submitted successfully!');
-          setShowSuccess(true); // ✅ SHOW MODAL
+          setShowSuccess(true); // done: SHOW MODAL
           reset();
         },
       });
@@ -77,7 +77,7 @@ export default function AgentAgreementPage() {
           <div className="bg-[#f3f3f3] border-l-4 border-[#e87722] rounded-md p-4 text-sm">
             <p className="font-semibold mb-2">This Agreement is entered into by and between:</p>
 
-            <p>• Rurblist ("Platform"), and</p>
+            <p>• Rurblist (&quot;Platform&quot;), and</p>
 
             <div className="flex items-center flex-wrap gap-2 mt-1">
               <span>•</span>
@@ -96,7 +96,7 @@ export default function AgentAgreementPage() {
                 "
               />
 
-              <span>("Agent"), {today}.</span>
+              <span>(&quot;Agent&quot;), {today}.</span>
             </div>
           </div>
 
@@ -214,3 +214,4 @@ function AgreementSection({ title, text }: { title: string; text: React.ReactNod
     </div>
   );
 }
+

@@ -30,7 +30,7 @@ export const publicRoutes: AppRoute[] = [
     public: true,
   },
   {
-    title: 'Otp verfication',
+    title: 'Otp verification',
     path: '/otp-verification',
     public: true,
   },
@@ -118,7 +118,7 @@ export const commonProtectedRoutes: AppRoute[] = [
     path: '/verification',
     roles: ['Home_Seeker', 'Agent'],
     title: 'verification',
-    permissions: ['MANAGE_PROPERTIES'],
+    permissions: ['VIEW_PROFILE'],
   },
   {
     path: '/profile',
@@ -182,10 +182,10 @@ export const homeSeekerRoutes: AppRoute[] = [
     permissions: ['MANAGE_PROPERTIES', 'VIEW_PROFILE'],
   },
   {
-    path: '/payment/complete',
+    path: '/payment/complete/',
     roles: ['Agent', 'Admin', 'Landlord', 'Home_Seeker'],
     title: 'Payment complete',
-    permissions: ['MANAGE_PROPERTIES', 'VIEW_PROFILE'],
+    permissions: ['VIEW_PROFILE'],
   },
   {
     path: '/payment-tour',

@@ -8,7 +8,7 @@ interface TourCardProps {
   dateTime: string;
   tourType: string;
   message: string;
-  status: String;
+  status: string;
   onCancel?: () => void;
   loading?: boolean;
 }

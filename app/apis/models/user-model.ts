@@ -1,9 +1,13 @@
+import { AgentModel, KycStatus, NinSlipUrl, SelfieUrl, VerificationData } from './agent-model';
 import { ProfileImage } from './profile-model';
+
+type SavedPropertyReference = string | { _id?: string };
+type PreferredLocation = string | { name?: string; state?: string; city?: string };
 
 export interface currentUserModel {
   user: UserModel;
   homeSeeker: HomeSeekerModel;
-  agent: AgentModelc;
+  agent: AgentModel;
 }
 
 export interface UserModel {
@@ -24,69 +28,14 @@ export interface HomeSeekerModel {
   verificationData: VerificationData;
   _id: string;
   user: string;
-  preferredLocations: any[];
-  savedProperties: any[];
+  preferredLocations: PreferredLocation[];
+  savedProperties: SavedPropertyReference[];
   status: string;
-  plan: any;
+  plan: string | null;
   isPlanActive: boolean;
   planActivatedAt: string;
-  nin: any;
+  nin: string | null;
   createdAt: string;
   updatedAt: string;
   __v: number;
-}
-
-export interface AgentModelc {
-  ninSlipUrl: NinSlipUrl;
-  selfieUrl: SelfieUrl;
-  cacDocumentUrl: CacDocumentUrl;
-  kycStatus: KycStatus;
-  verificationData: VerificationData;
-  _id: string;
-  user: UserModel;
-  firstName: string;
-  lastName: string;
-  nationality: string;
-  cacNumber: any;
-  companyName: any;
-  status: string;
-  nin: any;
-  bvn: any;
-  isAgreement: boolean;
-  savedProperties: any[];
-  createdAt: string;
-  updatedAt: string;
-  planActivatedAt: string;
-  plan: any;
-  isPlanActive: boolean;
-  __v: number;
-}
-
-export interface NinSlipUrl {
-  url: any;
-  public_id: any;
-}
-
-export interface SelfieUrl {
-  url: any;
-  public_id: any;
-}
-
-export interface CacDocumentUrl {
-  url: any;
-  public_id: any;
-}
-
-export interface KycStatus {
-  ninVerified: boolean;
-  cacVerified: boolean;
-  bvnVerified: boolean;
-  livenessVerified: boolean;
-}
-
-export interface VerificationData {
-  nin: any;
-  cac: any;
-  liveness: any;
-  bvn: any;
 }

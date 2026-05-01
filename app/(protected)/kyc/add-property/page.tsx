@@ -1,10 +1,8 @@
 'use client';
 
 import { RoleCard } from '@/components/role-card/role-card';
-import { OrangeButton } from '@/components/button/button';
 import { Footer } from '@/components/footer/footer';
 import { useState } from 'react';
-import Link from 'next/link';
 import { IconImage } from '@/components/icon-image/icon-image';
 import { useRouter } from 'next/navigation';
 

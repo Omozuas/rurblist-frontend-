@@ -28,14 +28,12 @@ export default function AdvancedHeroGallery({
   autoPlayInterval = 4000,
 }: Props) {
   const [index, setIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const touchStartX = useRef<number | null>(null)
 
   const paginate = useCallback(
     (dir: number) => {
-      setDirection(dir)
       setIndex((prev) => (prev + dir + images.length) % images.length)
     },
     [images.length]

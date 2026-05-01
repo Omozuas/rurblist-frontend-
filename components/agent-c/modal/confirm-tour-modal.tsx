@@ -5,7 +5,7 @@ import { useConfirmTour } from '@/app/apis/mutations/use-tour/use-confirm-tour';
 import { useRescheduleTour } from '@/app/apis/mutations/use-tour/use-reschedule-tour';
 import { OrangeButton } from '@/components/button/button';
 import Input from '@/components/input';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface ConfirmTourModalProps {
   open: boolean;
@@ -26,23 +26,13 @@ export default function ConfirmTourModal({
   tourType,
   tour,
 }: ConfirmTourModalProps) {
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [date, setDate] = useState(() => getInitialSchedule(tour?.date).date);
+  const [time, setTime] = useState(() => getInitialSchedule(tour?.date).time);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const { mutate: confirmTour, isPending: isConfirming } = useConfirmTour();
   const { mutate: rescheduleTour, isPending: isRescheduling } = useRescheduleTour();
-  useEffect(() => {
-    if (!tour?.date) return;
 
-    const d = new Date(tour.date);
-
-    const formattedDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
-    const formattedTime = d.toTimeString().slice(0, 5); // HH:mm
-
-    setDate(formattedDate);
-    setTime(formattedTime);
-  }, [tour]);
   if (!open) return null;
 
   // ✅ Combine date + time → ISO string
@@ -182,4 +172,21 @@ export default function ConfirmTourModal({
       </div>
     </div>
   );
+}
+
+function getInitialSchedule(date?: string) {
+  if (!date) {
+    return { date: '', time: '' };
+  }
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return { date: '', time: '' };
+  }
+
+  return {
+    date: parsedDate.toISOString().split('T')[0],
+    time: parsedDate.toTimeString().slice(0, 5),
+  };
 }

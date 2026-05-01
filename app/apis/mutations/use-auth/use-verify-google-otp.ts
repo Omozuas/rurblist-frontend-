@@ -12,7 +12,7 @@ export function useVerifyGoogleOtp() {
   return useMutation({
     mutationFn: verifyGoogleOtp,
 
-    onSuccess: (res) => {
+    onSuccess: () => {
       toast.success('Login successful 🎉');
 
       router.push('/');

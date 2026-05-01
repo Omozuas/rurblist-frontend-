@@ -1,12 +1,10 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { payForTour } from '../../services/payment-service/payment-service-client';
 
 export const usePayForTour = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ tourId, paymentMethod }: { tourId: string; paymentMethod: string }) =>
       payForTour(tourId, paymentMethod),

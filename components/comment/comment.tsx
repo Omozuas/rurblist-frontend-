@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import ProfileImage from '../profile-image/profile-image';
 import { IconImage } from '../icon-image/icon-image';
 import { CommentModel } from '@/app/apis/models/comment-model';
-import { currentUserModel, UserModel } from '@/app/apis/models/user-model';
+import { currentUserModel } from '@/app/apis/models/user-model';
 import { useCommentMutation } from '@/app/apis/mutations/use-comments/use-post-comment-reply';
 import { OrangeButton } from '../button/button';
 
@@ -32,6 +32,13 @@ export default function Comment({
     month: '2-digit',
     year: 'numeric',
   });
+  const isCurrentUserComment = comment?.user?._id === currentUser?.user?._id;
+  const commentProfileImage = isCurrentUserComment
+    ? (comment?.user?.profileImage?.url ??
+      currentUser?.agent?.selfieUrl?.url ??
+      currentUser?.user?.profileImage?.url ??
+      undefined)
+    : (comment?.user?.profileImage?.url ?? undefined);
 
   const handleSendReply = () => {
     if (!replyText.trim()) return;
@@ -50,7 +57,7 @@ export default function Comment({
     <div className="py-5 border-b border-gray-200 last:border-b-0">
       <div className="flex gap-3">
         <ProfileImage
-          src={comment?.user?.profileImage?.url}
+          src={commentProfileImage}
           alt={comment?.user?.fullName || 'user'}
           // name={comment.user.fullName || 'user'}
           size="sm"
@@ -135,7 +142,7 @@ export default function Comment({
           {/* Nested Replies */}
           {showReplies && hasReplies && (
             <div className="mt-5 ml-8 border-l border-gray-200 pl-6 space-y-5">
-              {validReplies.map((reply: any, index: number) => {
+              {validReplies.map((reply, index: number) => {
                 const isLastReply = index === validReplies.length - 1;
 
                 return (

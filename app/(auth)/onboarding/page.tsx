@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { RoleCard } from "@/components/role-card/role-card"
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useSignupStore } from "@/app/apis/store/auth-strore";
 import { useSignup } from "@/app/apis/mutations/use-auth/use-signup";
 import { OrangeButton } from "@/components/button/button";
@@ -40,23 +39,16 @@ const roles = [
 
 export default function OnboardingPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
-   const router = useRouter();
   const signupData = useSignupStore((s) => s.data);
-  const setRole = useSignupStore((s) => s.setRole);
 
   const { mutate, isPending } = useSignup();
 
   function handleContinue() {
-  console.log("Selected Role:", selectedRole);
-  console.log("Signup Data:", signupData);
-
   if (!selectedRole) {
-    console.log("No role selected");
     return;
   }
 
   if (!signupData) {
-    console.log("Signup data missing");
     return;
   }
 
@@ -64,8 +56,6 @@ export default function OnboardingPage() {
     ...signupData,
     role: selectedRole,
   };
-
-  console.log("Sending payload:", payload);
 
   mutate(payload);
 }

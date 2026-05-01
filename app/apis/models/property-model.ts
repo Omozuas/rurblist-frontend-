@@ -2,8 +2,8 @@ import { AgentModel } from './agent-model';
 import { CommentModel } from './comment-model';
 import { ImageModel } from './image-model';
 import { LocationModel } from './location-model';
-import { ProfileImage } from './profile-model';
-import { UserModel } from './user-model';
+
+type UserReference = string | { _id?: string };
 
 // types/property.ts
 export type Property = {
@@ -32,7 +32,7 @@ export interface PropertyModel {
   images: ImageModel[];
   location: LocationModel;
   owner: AgentModel;
-  likes: any[];
+  likes: UserReference[];
   amenities: string[];
   furnishingStatus: string;
   likesCount: number;
@@ -46,10 +46,11 @@ export interface PropertyModel {
   trendingScore: number;
   createdAt: string;
   updatedAt: string;
-  unlikes: any[];
+  unlikes: UserReference[];
   unlikesCount: number;
   commentsCount: number;
   inspectionFee: number;
+  __v: number;
 }
 
 export type PropertySearchParams = {

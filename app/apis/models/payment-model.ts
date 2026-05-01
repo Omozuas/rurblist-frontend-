@@ -1,4 +1,5 @@
 import { AgentModel } from './agent-model';
+import { PlanModel } from './plan-model';
 import { PropertyModel } from './property-model';
 import { UserModel } from './user-model';
 
@@ -19,12 +20,27 @@ export interface PaymentDetailModel {
   amount: number;
   currency: string;
   status: string;
-  plan: any;
+  plan: PlanModel | null;
   reference: string;
   receiptSent: boolean;
   createdAt: string;
+  metadata: MetadataModel;
   updatedAt: string;
+  verification: string;
   __v: number;
   paidAt: string;
   transactionId: string;
+}
+
+export interface MetadataModel {
+  paymentId: string;
+  type: string;
+  userName: string;
+  userPhone: string;
+  propertyId: string;
+  planId: string;
+  enscrowFee: string;
+  agentFee: string;
+  propertyPrice: string;
+  referrer: string;
 }

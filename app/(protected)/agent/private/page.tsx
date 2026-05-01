@@ -11,11 +11,10 @@ import MessagesSection from '@/components/agent-c/messaging/messages-section';
 import MessagesSectionSkeleton from '@/components/agent-c/messaging/messages-section-skeleton';
 import { useGetCurrentAgent } from '@/app/apis/mutations/use-agent/get-current-agent';
 import { useGetMyProperties } from '@/app/apis/mutations/use-property/use-get-my-properties';
-import { useAuth } from '@/components/layout/auth-provider';
 import { useLayoutStore } from '@/store/layout-store';
 import { useGetSavedProperties } from '@/app/apis/mutations/use-user/use-get-saved-property';
 import { useSaveProperty } from '@/app/apis/mutations/use-property/use-save-unsave-property';
-import SavedPropertiesSkeleton from '@/components/homeseeker-c/loader-skelenton/save-property-skelenton';
+import SavedPropertiesSkeleton from '@/components/homeseeker-c/loader-skeleton/save-property-skeleton';
 import SavedPropertiesSection from '@/components/homeseeker-c/save-properties';
 import { useGetTourAgents } from '@/app/apis/mutations/use-tour/use-get-tour-agent';
 import { formatTourDate } from '@/app/apis/utils/format-tour-date';
@@ -28,7 +27,7 @@ export default function AgentPrivateProfilePage() {
   const { data: propertiesData, isLoading: isPropertiesLoading } = useGetMyProperties();
   const { data: savedPropertiesData, isLoading: isSavedPropertiesLoading } =
     useGetSavedProperties();
-  const { unsave, isUnSaving } = useSaveProperty();
+  const { unsave } = useSaveProperty();
 
   useEffect(() => {
     setHideNavbar(true);
@@ -49,7 +48,8 @@ export default function AgentPrivateProfilePage() {
     experience: `${agentData?.yearsOfExperience ?? 0} years of experience`,
     location:
       [agentData?.city, agentData?.address].filter(Boolean).join(', ') || 'No location added',
-    image: currentAgent?.profileImage?.url || '/image/profile-image2.jpg',
+    image:
+      currentAgent?.profileImage?.url || agentData?.selfieUrl.url || '/image/profile-image2.jpg',
     phone: currentAgent?.phoneNumber || 'No phone number added',
     email: currentAgent?.email || 'No email added',
     about:
@@ -109,7 +109,7 @@ export default function AgentPrivateProfilePage() {
         hour: 'numeric',
         minute: '2-digit',
       }),
-      avatar: t.user?.profileImage?.url,
+      avatar: t.user?.profileImage?.url ?? t.agent?.selfieUrl?.url ?? undefined,
       tour: t,
     })) ?? [];
   return (

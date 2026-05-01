@@ -11,7 +11,7 @@ export default function AuthListener() {
     listenForAuthChanges(() => {
       router.push("/login");
     });
-  }, []);
+  }, [router]);
 
   return null;
 }

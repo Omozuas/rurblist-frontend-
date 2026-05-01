@@ -1,6 +1,5 @@
 'use client'
 
-import { IconImage } from '@/components/icon-image/icon-image'
 import { cn } from '@/lib/utils'
 
 interface AgreementSection {

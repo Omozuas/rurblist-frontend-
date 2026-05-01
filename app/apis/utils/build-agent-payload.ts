@@ -1,6 +1,23 @@
 import { CreateAgentPayload } from '../models/agent-model';
 
-export function buildAgentPayload(form: any): CreateAgentPayload {
+type AgentPayloadForm = {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  city?: string;
+  address?: string;
+  nationality?: string;
+  nin?: string;
+  cacNumber?: string;
+  companyName?: string;
+  yearsOfExperience?: number;
+  description?: string;
+  selfie?: File;
+  ninSlip?: File;
+  cacDoc?: File;
+};
+
+export function buildAgentPayload(form: AgentPayloadForm): CreateAgentPayload {
   if (!form.firstName || !form.lastName || !form.nin || !form.selfie || !form.ninSlip) {
     throw new Error('Missing required fields');
   }

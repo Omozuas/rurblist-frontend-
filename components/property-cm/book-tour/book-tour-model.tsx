@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OrangeButton } from '@/components/button/button';
 import Input from '@/components/input';
 import { IconImage } from '@/components/icon-image/icon-image';
-import InspectionFeeModal from './inspection-fee-model';
 import { useBookInspection } from '@/app/apis/mutations/use-tour/use-tour';
 
 interface BookTourModalProps {
@@ -395,10 +394,10 @@ function combineDateTime(date: Date, time: string) {
 
   if (!match) return result;
 
-  let [_, h, m, period] = match;
+  const [, hourValue, minuteValue, period] = match;
 
-  let hours = parseInt(h);
-  const minutes = parseInt(m);
+  let hours = parseInt(hourValue);
+  const minutes = parseInt(minuteValue);
 
   if (period === 'PM' && hours !== 12) hours += 12;
   if (period === 'AM' && hours === 12) hours = 0;

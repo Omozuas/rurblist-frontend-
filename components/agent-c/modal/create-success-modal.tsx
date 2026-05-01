@@ -8,7 +8,7 @@ interface SuccessModalProps {
   onContinue: () => void;
 }
 
-export default function SuccessModal({ isOpen, onClose, onContinue }: SuccessModalProps) {
+export default function SuccessModal({ isOpen, onContinue }: SuccessModalProps) {
   if (!isOpen) return null;
 
   return (

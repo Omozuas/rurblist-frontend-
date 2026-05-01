@@ -8,6 +8,8 @@ export interface ReplyModel {
   parentComment: string
   createdAt: string
   updatedAt: string
+  replies: ReplyModel[]
   isOwnerReply: boolean
+  isOwnerComment: boolean
   isCurrentUser: boolean
 }
