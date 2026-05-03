@@ -90,6 +90,7 @@ export default function DealClosedPage() {
           </div>
         </div>
       </header>
+
       <VerificationCertificate
         property={propertyTitle}
         verificationDate={completedDate}
@@ -133,10 +134,7 @@ export default function DealClosedPage() {
           </OrangeButton>
         </div>
       </section>
-      <TransactionTimeline
-        items={timelineItems}
-        onStartNewTransaction={() => router.push('/')}
-      />
+      <TransactionTimeline items={timelineItems} onStartNewTransaction={() => router.push('/')} />
     </>
   );
 }
