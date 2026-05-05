@@ -1,9 +1,15 @@
 'use client';
 
 import { useUploadProperty } from '@/app/apis/mutations/use-property/use-post-property';
+import {
+  COUNTRY_OPTIONS,
+  NIGERIA_STATE_OPTIONS,
+  getCityOptions,
+} from '@/app/apis/utils/nigeria-location-options';
 import ModalHeader from '@/components/agent-c/modal/headder-model';
 import { OrangeButton } from '@/components/button/button';
 import Dropdown from '@/components/dropdown/dropdown';
+import SearchableDropdown from '@/components/dropdown/searchable-dropdown';
 import ImageUpload from '@/components/image-upload/image-upload';
 import Input from '@/components/input';
 import { useLayoutStore } from '@/store/layout-store';
@@ -106,7 +112,7 @@ export default function AddNewPropertyPage() {
     agentFee: '',
     inspectionFee: '',
 
-    country: '',
+    country: 'Nigeria',
     state: '',
     city: '',
     address: '',
@@ -126,6 +132,32 @@ export default function AddNewPropertyPage() {
 
   const handleDropdownChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLocationDropdownChange = (name: 'country' | 'state' | 'city', value: string) => {
+    setFormData((prev) => {
+      if (name === 'country') {
+        return {
+          ...prev,
+          country: value,
+          state: value === 'Nigeria' ? prev.state : '',
+          city: '',
+        };
+      }
+
+      if (name === 'state') {
+        return {
+          ...prev,
+          state: value,
+          city: '',
+        };
+      }
+
+      return {
+        ...prev,
+        city: value,
+      };
+    });
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -304,31 +336,33 @@ console.log(data)
           <h2 className="text-2xl font-bold text-[#833700] mb-8">Location</h2>
 
           <div className="space-y-6">
-            <Input
+            <SearchableDropdown
               label="Country"
-              name="country"
-              className="p-4"
-              placeholder="Country"
+              placeholder="Select country"
+              searchPlaceholder="Search country"
+              options={COUNTRY_OPTIONS}
               value={formData.country}
-              onChange={handleInputChange}
+              onChange={(value) => handleLocationDropdownChange('country', value)}
             />
 
-            <Input
+            <SearchableDropdown
               label="State"
-              name="state"
-              className="p-4"
-              placeholder="State"
+              placeholder="Select state"
+              searchPlaceholder="Search state"
+              options={formData.country === 'Nigeria' ? NIGERIA_STATE_OPTIONS : []}
               value={formData.state}
-              onChange={handleInputChange}
+              onChange={(value) => handleLocationDropdownChange('state', value)}
+              disabled={formData.country !== 'Nigeria'}
             />
 
-            <Input
+            <SearchableDropdown
               label="City"
-              name="city"
-              className="p-4"
-              placeholder="City"
+              placeholder="Select city"
+              searchPlaceholder="Search city"
+              options={getCityOptions(formData.state)}
               value={formData.city}
-              onChange={handleInputChange}
+              onChange={(value) => handleLocationDropdownChange('city', value)}
+              disabled={!formData.state}
             />
 
             <Input

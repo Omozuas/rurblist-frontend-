@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Link, MessageCircle, X } from 'lucide-react';
+import { Link, X } from 'lucide-react';
 import Input from '@/components/input';
 import { OrangeButton } from '@/components/button/button';
 import { cn } from '@/lib/utils';
@@ -101,7 +101,7 @@ export default function ExpertPropertyAdviceForm({
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="E.g enter city, area or Specific location"
-            className="px-4 text-[13px]"
+            className="px-4 text-[13px] p-4"
           />
 
           <SelectField
@@ -233,7 +233,7 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[#808080] bg-white px-4 py-3 text-[13px] text-[#777777] outline-none focus:border-transparent focus:ring-2 focus:ring-[#e87722]"
+        className="w-full rounded-lg border border-[#808080] bg-white px-4  py-3 text-[13px] text-[#777777] outline-none focus:border-transparent focus:ring-2 focus:ring-[#e87722]"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (
