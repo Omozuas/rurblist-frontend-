@@ -1,75 +1,77 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { Facebook, Twitter, Instagram, MessageCircle, Mail } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import Link from 'next/link';
+import { Facebook, Twitter, Instagram, MessageCircle, Mail, Linkedin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FooterColumn {
-  title: string
-  links: Array<{ label: string; href: string }>
+  title: string;
+  links: Array<{ label: string; href: string }>;
 }
 
 interface FooterProps {
-  columns?: FooterColumn[]
-  description?: string
-  className?: string
-  showSocialIcons?: boolean
+  columns?: FooterColumn[];
+  description?: string;
+  className?: string;
+  showSocialIcons?: boolean;
 }
 
 const defaultColumns: FooterColumn[] = [
   {
     title: 'Locations',
     links: [
-      { label: 'Lagos', href: '#' },
-      { label: 'Delta', href: '#' },
-      { label: 'Enugu', href: '#' },
-      { label: 'Abuja etc', href: '#' }
-    ]
+      { label: 'Lagos', href: '/property?state=Lagos' },
+      { label: 'Delta', href: '/property?state=Delta' },
+      { label: 'Enugu', href: '/property?state=Enugu' },
+      { label: 'Abuja etc', href: '/property?state=Abuja' },
+    ],
   },
   {
     title: 'Learn more',
     links: [
-      { label: 'Lands', href: '#' },
-      { label: 'Apartments', href: '#' },
-      { label: 'Business properties', href: '#' },
-      { label: 'Listings', href: '#' },
-      { label: 'Agents', href: '#' }
-    ]
+      { label: 'Lands', href: '/property?type=Land' },
+      { label: 'Apartments', href: '/property?type=Apartment' },
+      { label: 'Business properties', href: '/property?type=Commercial' },
+      { label: 'Listings', href: '/property' },
+      { label: 'Agents', href: '/agent/profile' },
+    ],
   },
   {
     title: 'Contact info',
     links: [
-      { label: 'Phone: +234-845-678', href: 'tel:+2348456789' },
-      { label: 'Email: info@rurblist.com', href: 'mailto:info@rurblist.com' }
-    ]
-  }
-]
+      { label: 'Phone: +2348154155124', href: 'tel:+2348154155124' },
+      { label: 'Email: hello@rurblist.com', href: 'mailto:hello@rurblist.com' },
+    ],
+  },
+];
 
 const defaultDescription =
-  'Housing made easy! At rurblist we strive to give you the best services and the best apartment. at a low cost, you can enjoy our services.'
+  'Housing made easy! At rurblist we strive to give you the best services and the best apartment. at a low cost, you can enjoy our services.';
 
 export function Footer({
   columns = defaultColumns,
   description = defaultDescription,
   className,
-  showSocialIcons = true
+  showSocialIcons = true,
 }: FooterProps) {
   const socialIcons = [
     { Icon: Facebook, href: '#', label: 'Facebook' },
-    { Icon: Twitter, href: '#', label: 'Twitter' },
-    { Icon: Instagram, href: '#', label: 'Instagram' },
-    { Icon: MessageCircle, href: '#', label: 'WhatsApp' },
-    { Icon: Mail, href: '#', label: 'Email' }
-  ]
+    { Icon: Linkedin, href: 'https://www.linkedin.com/company/rurblist/', label: 'Linkedin' },
+    { Icon: Twitter, href: 'https://x.com/Rurblist', label: 'Twitter' },
+    {
+      Icon: Instagram,
+      href: 'https://www.instagram.com/rurblist?igsh=MjNyb3g2dGNuaHBu',
+      label: 'Instagram',
+    },
+    { Icon: MessageCircle, href: 'https://wa.me/2348154155124', label: 'WhatsApp' },
+    { Icon: Mail, href: '#', label: 'Email' },
+  ];
 
   return (
     <footer
-      className={cn(
-        'relative bg-cover bg-center bg-no-repeat pt-20 pb-8',
-        className
-      )}
+      className={cn('relative bg-cover bg-center bg-no-repeat pt-20 pb-8', className)}
       style={{
-        backgroundImage: 'url(/footer-bg.jpg)'
+        backgroundImage: 'url(/footer-bg.jpg)',
       }}
     >
       {/* Content */}
@@ -78,9 +80,7 @@ export function Footer({
           {/* Brand section */}
           <div className="flex flex-col">
             <h2 className="text-2xl font-script text-gray-900 mb-3">Rurblist</h2>
-            <p className="text-gray-600 text-sm leading-relaxed mb-4 max-w-xs">
-              {description}
-            </p>
+            <p className="text-gray-600 text-sm leading-relaxed mb-4 max-w-xs">{description}</p>
 
             {/* Social icons */}
             {showSocialIcons && (
@@ -121,13 +121,11 @@ export function Footer({
 
         {/* Bottom divider */}
         <div className="border-t border-gray-200 pt-6">
-          <p className="text-gray-500 text-xs text-center">
-            © 2024 Rurblist. All rights reserved.
-          </p>
+          <p className="text-gray-500 text-xs text-center">© 2024 Rurblist. All rights reserved.</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
-export default Footer
+export default Footer;

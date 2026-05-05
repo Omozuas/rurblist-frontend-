@@ -23,7 +23,7 @@ export default function AdvisoryServicesCard({
           {items.map((item, index) => (
             <div key={`${item}-${index}`} className="flex items-start gap-3">
               <Check
-                className="mt-[1px] h-5 w-5 shrink-0 text-[#28b34b] sm:h-6 sm:w-6"
+                className="mt-px h-5 w-5 shrink-0 text-[#28b34b] sm:h-6 sm:w-6"
                 strokeWidth={2.4}
               />
 

@@ -73,8 +73,10 @@ export function ForSaleFilter({
   value: string
   onChange: (v: string) => void
 }) {
+  const selectedLabel = PROPERTY_TYPES.find(option => option.id === value)?.label || 'For sale'
+
   return (
-    <FilterShell title="For sale" >
+    <FilterShell title={selectedLabel} active={!!value && value !== 'all'} >
          {(close) => (
       <div className="space-y-4">
         {PROPERTY_TYPES.slice(1).map(option => (
@@ -179,8 +181,10 @@ export function TypeFilter({
   value: string
   onChange: (v: string) => void
 }) {
+  const selectedLabel = PROPERTY_CATEGORIES.find(option => option.id === value)?.label || 'Type'
+
   return (
-    <FilterShell title="Type" >
+    <FilterShell title={selectedLabel} active={!!value && value !== 'all'} >
       {(close) => (
       <div className="space-y-4">
         {PROPERTY_CATEGORIES.slice(1).map(option => (
