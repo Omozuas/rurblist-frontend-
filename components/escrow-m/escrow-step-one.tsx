@@ -22,6 +22,27 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(size / 1024, 1).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileLabel(file: File) {
+  if (file.type === 'application/pdf') return 'PDF document';
+
+  if (
+    file.type === 'application/msword' ||
+    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    return 'Word document';
+  }
+
+  return 'Selected document';
+}
+
 export default function EscrowStepOne({ formData, updateForm, isLoading, onNext }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -67,6 +88,16 @@ export default function EscrowStepOne({ formData, updateForm, isLoading, onNext 
     }
 
     simulateUpload();
+  };
+
+  const clearFile = () => {
+    updateForm({ file: null });
+    setPreview(null);
+    setUploadProgress(0);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const simulateUpload = () => {
@@ -137,14 +168,14 @@ export default function EscrowStepOne({ formData, updateForm, isLoading, onNext 
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer relative hover:border-[#E87722] transition-colors flex flex-col items-center justify-center"
           >
-            {!preview && (
+            {!preview && !formData.file && (
               <>
                 <IconImage src="/icons/upload-cloud.svg" alt="upload" width={40} height={40} />
                 <p className="mt-3 text-sm text-gray-500 text-center">Drag or tap to upload</p>
               </>
             )}
 
-            {preview && (
+            {preview && formData.file && (
               <div className="relative flex justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={preview} alt="preview" className="w-40 h-40 object-cover rounded-lg" />
@@ -152,13 +183,41 @@ export default function EscrowStepOne({ formData, updateForm, isLoading, onNext 
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    updateForm({ file: null });
-                    setPreview(null);
-                    setUploadProgress(0);
+                    clearFile();
                   }}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
                 >
                   ✕
+                </button>
+              </div>
+            )}
+
+            {!preview && formData.file && (
+              <div className="relative w-full max-w-sm rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-sm font-semibold text-[#E87722]">
+                    {formData.file.type === 'application/pdf' ? 'PDF' : 'DOC'}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {formData.file.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {getFileLabel(formData.file)} • {formatFileSize(formData.file.size)}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile();
+                  }}
+                  className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-red-500 text-xs text-white"
+                >
+                  ×
                 </button>
               </div>
             )}

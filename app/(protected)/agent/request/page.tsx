@@ -2,21 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLayoutStore } from '@/store/layout-store';
+import { useFileUpload } from '@/app/apis/hooks/use-file-upload';
+import { useAgentForm } from '@/app/apis/store/agent-store';
 import BackNavbar from '@/components/agent-c/back-navbar';
-import Input from '@/components/input';
-import Textarea from '@/components/text-area';
 import { OrangeButton } from '@/components/button/button';
 import SelectDropdown from '@/components/dropdown/select-dropdown';
-import { useAgentForm } from '@/app/apis/store/agent-store';
-import { useFileUpload } from '@/app/apis/hooks/use-file-upload';
+import Input from '@/components/input';
+import Textarea from '@/components/text-area';
+import { useLayoutStore } from '@/store/layout-store';
 
 export default function AgentRequestFormPage() {
   const router = useRouter();
   const setHideNavbar = useLayoutStore((s) => s.setHideNavbar);
   const { setForm } = useAgentForm();
 
-  // ✅ FORM STATE
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -29,7 +28,6 @@ export default function AgentRequestFormPage() {
   const [yearsOfExperience, setYearsOfExperience] = useState(0);
   const [description, setDescription] = useState('');
 
-  // ✅ FILES
   const { file: selfieFile, preview: selfiePreview, handleFile: handleSelfie } = useFileUpload();
   const {
     file: ninFile,
@@ -50,10 +48,8 @@ export default function AgentRequestFormPage() {
     return () => setHideNavbar(false);
   }, [setHideNavbar]);
 
-  // ✅ VALIDATION
   const isValid = firstName && lastName && nin && yearsOfExperience > 0 && selfieFile && ninFile;
 
-  // ✅ NEXT STEP
   const handleNext = () => {
     if (!isValid) return;
 
@@ -81,28 +77,30 @@ export default function AgentRequestFormPage() {
     <div>
       <BackNavbar logoSrc="/Rublist.svg" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        {/* HEADER */}
-        <div className="bg-white rounded-xl shadow p-6 text-center mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold font-[Georgia] text-[#833700]">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        <div className="mb-10 rounded-xl bg-white p-6 text-center shadow">
+          <h1 className="font-[Georgia] text-2xl font-bold text-[#833700] sm:text-3xl">
             Agent Request Form
           </h1>
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 text-gray-500">
             Please fill out your information to become a verified agent
           </p>
         </div>
-        {/* ================= PERSONAL ================= */}
-        <h2 className="text-xl sm:text-2xl font-bold font-[Georgia] text-[#833700] mb-6">
+
+        <h2 className="mb-6 font-[Georgia] text-xl font-bold text-[#833700] sm:text-2xl">
           Personal Information
         </h2>
 
-        {/* FORM */}
         <div className="space-y-6">
-          {/* SELFIE */}
-          <UploadBox label="Upload Selfie" onFile={handleSelfie} preview={selfiePreview} />
+          <UploadBox
+            label="Upload Selfie"
+            onFile={handleSelfie}
+            preview={selfiePreview}
+            file={selfieFile}
+            accept="image/*"
+          />
 
-          {/* NAMES */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <Input
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -117,8 +115,7 @@ export default function AgentRequestFormPage() {
             />
           </div>
 
-          {/* DOB + CITY */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <Input
               type="date"
               value={dateOfBirth}
@@ -141,8 +138,7 @@ export default function AgentRequestFormPage() {
             className="p-4"
           />
 
-          {/* NATIONALITY */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <SelectDropdown
               label="Nationality"
               value={nationality}
@@ -163,16 +159,16 @@ export default function AgentRequestFormPage() {
             />
           </div>
 
-          {/* NIN */}
           <UploadBox
             label="Upload NIN Slip"
             onFile={handleNin}
             preview={ninPreview}
+            file={ninFile}
             fileName={ninFileName}
+            accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           />
 
-          {/* COMPANY */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <Input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
@@ -188,25 +184,24 @@ export default function AgentRequestFormPage() {
             />
           </div>
 
-          {/* BIO */}
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             label="About Agent"
             className="p-4"
           />
-          {/* ================= BUSINESS ================= */}
+
           <div className="mt-12">
-            <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold font-[Georgia] text-[#833700]">
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="font-[Georgia] text-xl font-bold text-[#833700] sm:text-2xl">
                 Business Information
               </h2>
 
-              <span className="text-xs bg-[#FCE7D6] text-[#7A3E0A] px-3 py-1 rounded-md">
+              <span className="rounded-md bg-[#FCE7D6] px-3 py-1 text-xs text-[#7A3E0A]">
                 Optional
               </span>
             </div>
-            {/* CAC */}
+
             <Input
               value={cacNumber}
               onChange={(e) => setCacNumber(e.target.value)}
@@ -218,10 +213,12 @@ export default function AgentRequestFormPage() {
               label="Upload CAC Slip"
               onFile={handleCac}
               preview={cacPreview}
+              file={cacFile}
               fileName={cacFileName}
+              accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             />
           </div>
-          {/* BUTTON */}
+
           <OrangeButton onClick={handleNext} disabled={!isValid} fullWidth>
             Submit Request
           </OrangeButton>
@@ -231,37 +228,85 @@ export default function AgentRequestFormPage() {
   );
 }
 
-/* UPLOAD */
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(size / 1024, 1).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileLabel(file: File) {
+  if (file.type === 'application/pdf') return 'PDF document';
+
+  if (
+    file.type === 'application/msword' ||
+    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    return 'Word document';
+  }
+
+  if (file.type.startsWith('image/')) return 'Image file';
+
+  return 'Selected document';
+}
+
+function getFileBadge(file: File) {
+  if (file.type === 'application/pdf') return 'PDF';
+  if (file.type.startsWith('image/')) return 'IMG';
+  return 'DOC';
+}
+
 function UploadBox({
   label,
   onFile,
   preview,
+  file,
   fileName,
+  accept,
 }: {
   label: string;
   onFile: (file?: File) => void;
   preview?: string | null;
+  file?: File | null;
   fileName?: string | null;
+  accept?: string;
 }) {
   return (
     <div>
       <p className="mb-2 text-sm text-gray-700">{label}</p>
 
-      <label className="w-full border-2 border-dashed border-gray-300 rounded-lg px-6 py-6 flex items-center justify-center cursor-pointer hover:border-[#e87722] transition">
-        <input type="file" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+      <label className="flex w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-6 transition hover:border-[#e87722]">
+        <input
+          type="file"
+          className="hidden"
+          accept={accept}
+          onChange={(e) => onFile(e.target.files?.[0])}
+        />
 
-        {/* IMAGE */}
-        {preview ? (
+        {preview && file ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="preview" className="h-20 w-20 object-cover rounded-md" />
-        ) : fileName ? (
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <span>📄</span>
-            <span className="truncate max-w-50">{fileName}</span>
+          <img src={preview} alt="preview" className="h-20 w-20 rounded-md object-cover" />
+        ) : file ? (
+          <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-sm font-semibold text-[#E87722]">
+                {getFileBadge(file)}
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {fileName || file.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {getFileLabel(file)} - {formatFileSize(file.size)}
+                </p>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 text-gray-500 text-sm">
-            <span className="text-lg">📷</span>
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <span className="text-lg">Upload</span>
             <span>Click to upload your {label.toLowerCase()}</span>
           </div>
         )}
