@@ -14,7 +14,7 @@ export function useSaveProperty() {
     onSuccess: (_, propertyId) => {
       queryClient.invalidateQueries({ queryKey: ['saved-propertys'] });
       queryClient.invalidateQueries({ queryKey: ['saved-properties', propertyId] });
-      queryClient.invalidateQueries({ queryKey: ['seaech-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['search-properties'] });
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
     },
   });
@@ -23,7 +23,7 @@ export function useSaveProperty() {
     mutationFn: (propertyId: string) => unsaveProperty(propertyId),
     onSuccess: (_, propertyId) => {
       queryClient.invalidateQueries({ queryKey: ['saved-propertys'] });
-      queryClient.invalidateQueries({ queryKey: ['seaech-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['search-properties'] });
       queryClient.invalidateQueries({ queryKey: ['saved-properties', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
     },

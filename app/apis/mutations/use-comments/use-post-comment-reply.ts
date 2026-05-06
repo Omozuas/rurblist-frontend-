@@ -15,7 +15,7 @@ export function useCommentMutation(propertyId: string) {
         queryKey: ['get-comments', propertyId],
       });
       await queryClient.invalidateQueries({
-        queryKey: ['seaech-properties'],
+        queryKey: ['search-properties'],
       });
     },
   });
@@ -30,7 +30,7 @@ export function useCommentMutation(propertyId: string) {
         queryKey: ['get-comments', propertyId],
       });
       await queryClient.invalidateQueries({
-        queryKey: ['seaech-properties'],
+        queryKey: ['search-properties'],
       });
     },
   });

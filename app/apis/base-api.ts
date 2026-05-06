@@ -33,6 +33,10 @@ type ParsedApiResponse = {
   message?: string | string[];
   statusCode?: number;
   error?: string;
+  success?: boolean;
+  count?: number;
+  hasNextPage?: boolean;
+  nextCursor?: ApiResponse<unknown>['nextCursor'];
 };
 
 export async function request<T = unknown>(
@@ -223,6 +227,10 @@ export async function request<T = unknown>(
       data: parsed?.data as T,
       message: getErrorMessage(parsed) ?? 'Success',
       statusCode: response.status,
+      success: parsed?.success,
+      count: parsed?.count,
+      hasNextPage: parsed?.hasNextPage,
+      nextCursor: parsed?.nextCursor,
     };
   } catch (error) {
     if (retries > 0) {

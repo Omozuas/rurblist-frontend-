@@ -46,43 +46,30 @@ export async function verifyBuyerPropertyServer(
 }
 
 function buildQuery(params: PropertySearchParams): string {
-  const query: string[] = [];
+  const query = new URLSearchParams();
 
-  if (params.search) query.push(`search=${params.search}`);
+  if (params.search) query.set('search', params.search);
+  if (params.type) query.set('type', params.type);
+  if (params.status) query.set('status', params.status);
+  if (params.minPrice) query.set('minPrice', String(params.minPrice));
+  if (params.maxPrice) query.set('maxPrice', String(params.maxPrice));
+  if (params.bedrooms) query.set('bedrooms[gte]', String(params.bedrooms));
+  if (params.bathrooms) query.set('bathrooms[gte]', String(params.bathrooms));
+  if (params.state) query.set('location.state', params.state);
+  if (params.city) query.set('location.city', params.city);
+  if (params.sort) query.set('sort', params.sort);
+  if (params.page) query.set('page', String(params.page));
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.cursor) query.set('cursor', params.cursor);
 
-  if (params.type) query.push(`type=${params.type}`);
-
-  if (params.status) query.push(`status=${params.status}`);
-
-  if (params.minPrice) query.push(`minPrice=${params.minPrice}`);
-
-  if (params.maxPrice) query.push(`maxPrice=${params.maxPrice}`);
-
-  // ✅ NO ENCODING
-  if (params.bedrooms) query.push(`bedrooms[gte]=${params.bedrooms}`);
-
-  if (params.bathrooms) query.push(`bathrooms[gte]=${params.bathrooms}`);
-
-  if (params.state) query.push(`location.state=${params.state}`);
-
-  if (params.city) query.push(`location.city=${params.city}`);
-
-  if (params.sort) query.push(`sort=${params.sort}`);
-
-  if (params.page) query.push(`page=${params.page}`);
-
-  if (params.limit) query.push(`limit=${params.limit}`);
-
-  if (params.cursor) query.push(`cursor=${encodeURIComponent(params.cursor)}`); // ✅ important
-
-  return query.join('&');
+  return query.toString();
 }
 
 export async function searchPropertiesServer(
   params: PropertySearchParams,
 ): Promise<ApiResponse<PropertyModel[]>> {
   const query = buildQuery(params);
-  console.log('🌐 API CALL:', `/property?${query}`);
+  console.log('API CALL:', `/property?${query}`);
   const res = await api.authGet<PropertyModel[]>(`/property?${query}`);
 
   return res;

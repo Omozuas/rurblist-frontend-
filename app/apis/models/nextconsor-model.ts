@@ -1,4 +1,4 @@
 export interface NextCursorModel {
-  value: number
+  value: string | number
   id: string
 }

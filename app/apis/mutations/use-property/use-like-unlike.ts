@@ -20,7 +20,7 @@ export function useLikeProperty() {
 
       // Refetch lists if needed
       queryClient.invalidateQueries({
-        queryKey: ['seaech-properties'],
+        queryKey: ['search-properties'],
       });
     },
   });
@@ -34,7 +34,7 @@ export function useLikeProperty() {
       });
 
       queryClient.invalidateQueries({
-        queryKey: ['seaech-properties'],
+        queryKey: ['search-properties'],
       });
     },
   });

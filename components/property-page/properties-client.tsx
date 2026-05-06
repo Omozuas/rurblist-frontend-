@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchProperties } from '@/app/apis/mutations/use-property/use-search-properties';
+import { PropertyModel } from '@/app/apis/models/property-model';
 import { useAuth } from '@/components/layout/auth-provider';
 import {
   BedsBathsFilter,
@@ -64,7 +65,7 @@ export default function PropertiesClient({
       bedrooms: beds,
       bathrooms: baths,
       limit: 10,
-      sort: '-price',
+      sort: '-createdAt',
     };
   }, [searchQuery, selectedType, selectedCategory, selectedState, minPrice, maxPrice, beds, baths]);
 
@@ -78,19 +79,35 @@ export default function PropertiesClient({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
       },
-      { threshold: 1 },
+      {
+        root: null,
+        rootMargin: '300px',
+        threshold: 0,
+      },
     );
 
     observer.observe(el);
 
     return () => observer.disconnect();
-  }, [hasNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const properties = data?.pages.flatMap((page) => page.data ?? []) ?? [];
+  const properties = useMemo(() => {
+    const uniqueProperties = new Map<string, PropertyModel>();
+
+    data?.pages.forEach((page) => {
+      page.data?.forEach((property) => {
+        if (!uniqueProperties.has(property._id)) {
+          uniqueProperties.set(property._id, property);
+        }
+      });
+    });
+
+    return Array.from(uniqueProperties.values());
+  }, [data]);
 
   if (isLoading && properties.length === 0) {
     return <PropertiesPageSkeleton />;
@@ -191,8 +208,17 @@ export default function PropertiesClient({
             );
           })}
         </div>
-        <div ref={loadMoreRef} className="mt-6 w-full">
+        <div ref={loadMoreRef} className="mt-6 flex min-h-12 w-full items-center justify-center">
           {isFetchingNextPage && <LoadMoreSkeleton />}
+          {hasNextPage && !isFetchingNextPage && (
+            <button
+              type="button"
+              onClick={() => fetchNextPage()}
+              className="rounded-md border border-[#e87722] px-4 py-2 text-sm font-medium text-[#e87722] transition hover:bg-orange-50"
+            >
+              Load more
+            </button>
+          )}
           {!hasNextPage && <p className="py-6 text-center text-gray-500">No more results</p>}
         </div>
       </div>

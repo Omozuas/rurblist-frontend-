@@ -7,6 +7,7 @@ export type ApiResponse<T> = {
   error?: string;
   success?: boolean;
   count?: number;
+  hasNextPage?: boolean;
   nextCursor?: NextCursorModel;
 };
 

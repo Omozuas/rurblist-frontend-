@@ -272,12 +272,12 @@ console.log(data)
     amenities.forEach((amenity) => {
       data.append('amenities', amenity);
     });
-    data.append('address', JSON.stringify(formData.address));
-    data.append('country', JSON.stringify(formData.country));
-    data.append('state', JSON.stringify(formData.state));
-    data.append('city', JSON.stringify(formData.city));
-    data.append('lat', JSON.stringify(formData.lat));
-    data.append('lng', JSON.stringify(formData.lng));
+    data.append('address', formData.address);
+    data.append('country', formData.country);
+    data.append('state', formData.state);
+    data.append('city', formData.city);
+    data.append('lat', String(formData.lat));
+    data.append('lng', String(formData.lng));
 
     // compress images before uploading
     /*  setCompressing(true);

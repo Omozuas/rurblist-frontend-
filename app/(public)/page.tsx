@@ -8,6 +8,15 @@ import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
+
+  const handleSearch = (value: string) => {
+    const query = value.trim();
+
+    if (!query) return;
+
+    router.push(`/property?search=${encodeURIComponent(query)}`);
+  };
+
   return (
     <>
       <section
@@ -31,7 +40,7 @@ export default function Home() {
                 Rurblist connects you with trusted agents, verified properties, and <br /> escrow
                 services , so your next deal is clean, clear, and worry-free
               </p>
-              <SearchBar />
+              <SearchBar onSearch={handleSearch} />
             </div>
           </div>
         </div>
@@ -478,7 +487,7 @@ export default function Home() {
               Ready to find your dream home? Explore our listings <br /> now
             </h2>
             <div className="mt-8 flex justify-center">
-              <SearchBar buttonLabel="Search" />
+              <SearchBar buttonLabel="Search" onSearch={handleSearch} />
             </div>
           </div>
         </div>
