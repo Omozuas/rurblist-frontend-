@@ -2,14 +2,13 @@
 
 import { ApiResponse } from '../../base-response';
 import { api } from '../../call-apis';
-import { AgentModel, CreateAgentPayload } from '../../models/agent-model';
+import { AgentModel, CreateAgentPayload, UpdateAgentPayload } from '../../models/agent-model';
 
 export async function createAgentServer(
   payload: CreateAgentPayload,
 ): Promise<ApiResponse<AgentModel>> {
   const formData = new FormData();
 
-  // 🔹 Append fields
   formData.append('firstName', payload.firstName);
   formData.append('lastName', payload.lastName);
   formData.append('dateOfBirth', payload.dateOfBirth);
@@ -26,7 +25,6 @@ export async function createAgentServer(
     formData.append('cacNumber', payload.cacNumber);
   }
 
-  // 🔹 Files (MUST match backend field names)
   formData.append('selfie', payload.selfie);
   formData.append('ninSlip', payload.ninSlip);
 
@@ -34,10 +32,7 @@ export async function createAgentServer(
     formData.append('cacDoc', payload.cacDoc);
   }
 
-  const res = await api.authPost<AgentModel>(
-    '/agent',
-    formData, // ✅ IMPORTANT (multipart)
-  );
+  const res = await api.authPost<AgentModel>('/agent', formData);
 
   return res;
 }
@@ -59,7 +54,6 @@ export async function completeProfileServer(
 ): Promise<ApiResponse<AgentModel>> {
   const formData = new FormData();
 
-  // 🔹 Append fields
   formData.append('firstName', payload.firstName);
   formData.append('lastName', payload.lastName);
   formData.append('dateOfBirth', payload.dateOfBirth);
@@ -76,7 +70,6 @@ export async function completeProfileServer(
     formData.append('cacNumber', payload.cacNumber);
   }
 
-  // 🔹 Files (MUST match backend field names)
   formData.append('selfie', payload.selfie);
   formData.append('ninSlip', payload.ninSlip);
 
@@ -84,10 +77,37 @@ export async function completeProfileServer(
     formData.append('cacDoc', payload.cacDoc);
   }
 
-  const res = await api.authPatch<AgentModel>(
-    '/agent/complete-profile',
-    formData, // ✅ IMPORTANT (multipart)
-  );
+  const res = await api.authPatch<AgentModel>('/agent/complete-profile', formData);
+
+  return res;
+}
+
+export async function updateAgentServer(
+  payload: UpdateAgentPayload,
+): Promise<ApiResponse<AgentModel>> {
+  const formData = new FormData();
+
+  if (payload.city !== undefined) formData.append('city', payload.city);
+  if (payload.address !== undefined) formData.append('address', payload.address);
+  if (payload.nationality !== undefined) formData.append('nationality', payload.nationality);
+  if (payload.cacNumber !== undefined) formData.append('cacNumber', payload.cacNumber);
+  if (payload.companyName !== undefined) formData.append('companyName', payload.companyName);
+  if (payload.description !== undefined) formData.append('description', payload.description);
+
+  if (payload.yearsOfExperience !== undefined) {
+    formData.append('yearsOfExperience', payload.yearsOfExperience.toString());
+  }
+
+  if (payload.selfie) formData.append('selfie', payload.selfie);
+  if (payload.cacDoc) formData.append('cacDoc', payload.cacDoc);
+  if (payload.selfie && payload.selfiePublicId) {
+    formData.append('selfiePublicId', payload.selfiePublicId);
+  }
+  if (payload.cacDoc && payload.cacDocPublicId) {
+    formData.append('cacDocPublicId', payload.cacDocPublicId);
+  }
+
+  const res = await api.authPatch<AgentModel>('/agent/me', formData);
 
   return res;
 }

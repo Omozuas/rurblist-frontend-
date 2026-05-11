@@ -16,12 +16,14 @@ interface UpcomingToursSectionProps {
   tours: Tour[];
   onCancelTour?: (id: string) => void;
   loadingId?: string;
+  participantLabel?: string;
 }
 
 export default function UpcomingToursSection({
   tours,
   onCancelTour,
   loadingId,
+  participantLabel,
 }: UpcomingToursSectionProps) {
   return (
     <div className="space-y-4">
@@ -44,6 +46,7 @@ export default function UpcomingToursSection({
               <TourCard
                 propertyTitle={tour.propertyTitle}
                 agentName={tour.agentName}
+                participantLabel={participantLabel}
                 dateTime={tour.dateTime}
                 tourType={tour.tourType}
                 loading={loadingId === tour.id}

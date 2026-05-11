@@ -23,6 +23,16 @@ export interface CreateAgentPayload {
   cacDoc?: File;
 }
 
+export type UpdateAgentPayload = Partial<
+  Omit<CreateAgentPayload, 'selfie' | 'ninSlip' | 'cacDoc'>
+> & {
+  selfie?: File;
+  ninSlip?: File;
+  cacDoc?: File;
+  selfiePublicId?: string;
+  cacDocPublicId?: string;
+};
+
 export interface AgentModel {
   firstName: string;
   lastName: string;
@@ -77,8 +87,34 @@ export interface KycStatus {
 }
 
 export interface VerificationData {
-  nin: VerificationProviderData;
-  cac: VerificationProviderData;
+  nin: NinData;
+  cac: CompanyData;
   liveness: VerificationProviderData;
   bvn: VerificationProviderData;
+}
+
+export interface CompanyData {
+  company_name: string;
+  rc_number: string;
+  type_of_company: string;
+  date_of_registration: string;
+  address: string;
+  status: string;
+  state: string;
+  city: string;
+  email: string;
+  business_number: string;
+  lga: string;
+  business: string;
+}
+
+export interface NinData {
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  date_of_birth: string;
+  phone_number: string;
+  photo: string;
+  gender: string;
+  customer: string;
 }

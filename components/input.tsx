@@ -19,6 +19,7 @@ export default function Input({ label, error, className = "", ...props }: InputP
         className={`
           w-full py-3 border rounded-lg
           focus:outline-none focus:ring-2 focus:ring-[#e87722] focus:border-transparent
+          disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500
           ${error ? 'border-red-500' : 'border-[#808080]'}
           ${className}
         `}

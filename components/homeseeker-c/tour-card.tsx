@@ -5,6 +5,7 @@ import { OrangeButton } from '../button/button';
 interface TourCardProps {
   propertyTitle: string;
   agentName: string;
+  participantLabel?: string;
   dateTime: string;
   tourType: string;
   message: string;
@@ -16,6 +17,7 @@ interface TourCardProps {
 export default function TourCard({
   propertyTitle,
   agentName,
+  participantLabel = 'Agent',
   dateTime,
   tourType,
   onCancel,
@@ -30,7 +32,7 @@ export default function TourCard({
       </p>
 
       <p className="text-sm text-gray-600">
-        Agent: <span className="font-medium text-gray-900">{agentName}</span>
+        {participantLabel}: <span className="font-medium text-gray-900">{agentName}</span>
       </p>
 
       <p className="text-sm text-gray-600">

@@ -104,3 +104,12 @@ export async function unsavePropertyServer(propertyId: string): Promise<ApiRespo
 
   return res;
 }
+
+export async function updatePropertyServer(
+  propertyId: string,
+  formData: FormData,
+): Promise<ApiResponse<PropertyModel>> {
+  const res = await api.authPatch<PropertyModel>(`/property/${propertyId}`, formData);
+
+  return res;
+}

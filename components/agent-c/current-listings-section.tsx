@@ -18,9 +18,15 @@ interface Property {
 
 interface CurrentListingsSectionProps {
   properties: Property[];
+  onEditProperty?: (id: string) => void;
+  onDeleteProperty?: (property: Property) => void;
 }
 
-export default function CurrentListingsSection({ properties }: CurrentListingsSectionProps) {
+export default function CurrentListingsSection({
+  properties,
+  onEditProperty,
+  onDeleteProperty,
+}: CurrentListingsSectionProps) {
   const router = useRouter();
   return (
     <section className="mt-10 bg-white border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8">
@@ -58,7 +64,13 @@ export default function CurrentListingsSection({ properties }: CurrentListingsSe
       "
       >
         {properties.map((property) => (
-          <PropertyCard key={property.id} {...property} showControls />
+          <PropertyCard
+            key={property.id}
+            {...property}
+            showControls
+            onEdit={(id) => id && onEditProperty?.(id)}
+            onDelete={() => onDeleteProperty?.(property)}
+          />
         ))}
       </div>
       {properties.length === 0 && (

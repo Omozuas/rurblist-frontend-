@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useFileUpload } from '@/app/apis/hooks/use-file-upload';
+import { useUpdateAgent } from '@/app/apis/mutations/use-agent/post-agent';
+import { useGetCurrentUser } from '@/app/apis/mutations/use-user/use-get-current-user';
 import { useAgentForm } from '@/app/apis/store/agent-store';
 import BackNavbar from '@/components/agent-c/back-navbar';
 import { OrangeButton } from '@/components/button/button';
@@ -13,8 +17,14 @@ import { useLayoutStore } from '@/store/layout-store';
 
 export default function AgentRequestFormPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const setHideNavbar = useLayoutStore((s) => s.setHideNavbar);
   const { setForm } = useAgentForm();
+  const { data: currentUserData, refetch } = useGetCurrentUser();
+  const { mutate: updateAgent, isPending: isUpdating } = useUpdateAgent();
+
+  const agent = currentUserData?.data?.agent;
+  const isUpdateMode = Boolean(agent?.isAgreement);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -48,10 +58,58 @@ export default function AgentRequestFormPage() {
     return () => setHideNavbar(false);
   }, [setHideNavbar]);
 
-  const isValid = firstName && lastName && nin && yearsOfExperience > 0 && selfieFile && ninFile;
+  useEffect(() => {
+    if (!agent) return;
+
+    const timer = window.setTimeout(() => {
+      setFirstName(agent.firstName || '');
+      setLastName(agent.lastName || '');
+      setDateOfBirth(agent.dateOfBirth?.slice(0, 10) || '');
+      setCity(agent.city || '');
+      setAddress(agent.address || '');
+      setNationality(agent.nationality || 'nigeria');
+      setNin(agent.nin || '');
+      setCacNumber(agent.cacNumber || '');
+      setCompanyName(agent.companyName || '');
+      setYearsOfExperience(agent.yearsOfExperience || 0);
+      setDescription(agent.description || '');
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [agent]);
+
+  const isValid = isUpdateMode
+    ? true
+    : firstName && lastName && nin && yearsOfExperience > 0 && selfieFile && ninFile;
 
   const handleNext = () => {
     if (!isValid) return;
+
+    if (isUpdateMode) {
+      updateAgent(
+        {
+          city,
+          address,
+          nationality,
+          companyName,
+          yearsOfExperience,
+          description,
+          cacNumber,
+          selfie: selfieFile || undefined,
+          selfiePublicId: selfieFile ? agent?.selfieUrl?.public_id : undefined,
+          cacDoc: cacFile || undefined,
+          cacDocPublicId: cacFile ? agent?.cacDocumentUrl?.public_id : undefined,
+        },
+        {
+          onSuccess: async () => {
+            toast.success('Agent profile updated successfully');
+            await queryClient.invalidateQueries({ queryKey: ['current-user'] });
+            await refetch();
+          },
+        },
+      );
+      return;
+    }
 
     setForm({
       firstName,
@@ -80,10 +138,12 @@ export default function AgentRequestFormPage() {
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <div className="mb-10 rounded-xl bg-white p-6 text-center shadow">
           <h1 className="font-[Georgia] text-2xl font-bold text-[#833700] sm:text-3xl">
-            Agent Request Form
+            {isUpdateMode ? 'Update Your Agent Profile' : 'Agent Request Form'}
           </h1>
           <p className="mt-2 text-gray-500">
-            Please fill out your information to become a verified agent
+            {isUpdateMode
+              ? 'Update your agent information below.'
+              : 'Please fill out your information to become a verified agent'}
           </p>
         </div>
 
@@ -93,9 +153,10 @@ export default function AgentRequestFormPage() {
 
         <div className="space-y-6">
           <UploadBox
-            label="Upload Selfie"
+            label={isUpdateMode ? 'Upload New Selfie (Optional)' : 'Upload Selfie'}
             onFile={handleSelfie}
             preview={selfiePreview}
+            currentUrl={isUpdateMode ? agent?.selfieUrl?.url : undefined}
             file={selfieFile}
             accept="image/*"
           />
@@ -105,12 +166,14 @@ export default function AgentRequestFormPage() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               label="First Name"
+              disabled={isUpdateMode}
               className="p-4"
             />
             <Input
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               label="Last Name"
+              disabled={isUpdateMode}
               className="p-4"
             />
           </div>
@@ -121,6 +184,7 @@ export default function AgentRequestFormPage() {
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
               label="Date of Birth"
+              disabled={isUpdateMode}
               className="p-4"
             />
             <Input
@@ -155,18 +219,23 @@ export default function AgentRequestFormPage() {
               value={nin}
               onChange={(e) => setNin(e.target.value)}
               label="NIN Number"
+              disabled={isUpdateMode}
               className="p-4"
             />
           </div>
 
-          <UploadBox
-            label="Upload NIN Slip"
-            onFile={handleNin}
-            preview={ninPreview}
-            file={ninFile}
-            fileName={ninFileName}
-            accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          />
+          {!isUpdateMode && (
+            <UploadBox
+              label="Upload NIN Slip"
+              onFile={handleNin}
+              preview={ninPreview}
+              file={ninFile}
+              fileName={ninFileName}
+              accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            />
+          )}
+
+          {isUpdateMode && <ReadOnlyDocument label="NIN Slip" url={agent?.ninSlipUrl?.url} />}
 
           <div className="grid gap-6 md:grid-cols-2">
             <Input
@@ -210,17 +279,29 @@ export default function AgentRequestFormPage() {
             />
 
             <UploadBox
-              label="Upload CAC Slip"
+              label={isUpdateMode ? 'Upload New CAC Slip (Optional)' : 'Upload CAC Slip'}
               onFile={handleCac}
               preview={cacPreview}
               file={cacFile}
               fileName={cacFileName}
               accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             />
+            {isUpdateMode && (
+              <div className="mt-4">
+                <ReadOnlyDocument label="Current CAC Slip" url={agent?.cacDocumentUrl?.url} />
+              </div>
+            )}
           </div>
 
-          <OrangeButton onClick={handleNext} disabled={!isValid} fullWidth>
-            Submit Request
+          {isUpdateMode && (
+            <p className="text-center text-sm text-gray-500">
+              To update your first name, last name, date of birth, NIN number, or NIN slip, please
+              contact a Rurblist agent.
+            </p>
+          )}
+
+          <OrangeButton onClick={handleNext} disabled={!isValid} loading={isUpdating} fullWidth>
+            {isUpdateMode ? 'Update Profile' : 'Submit Request'}
           </OrangeButton>
         </div>
       </div>
@@ -261,6 +342,7 @@ function UploadBox({
   label,
   onFile,
   preview,
+  currentUrl,
   file,
   fileName,
   accept,
@@ -268,6 +350,7 @@ function UploadBox({
   label: string;
   onFile: (file?: File) => void;
   preview?: string | null;
+  currentUrl?: string | null;
   file?: File | null;
   fileName?: string | null;
   accept?: string;
@@ -287,6 +370,9 @@ function UploadBox({
         {preview && file ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="preview" className="h-20 w-20 rounded-md object-cover" />
+        ) : currentUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={currentUrl} alt={label} className="h-20 w-20 rounded-md object-cover" />
         ) : file ? (
           <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm">
             <div className="flex items-center gap-3">
@@ -311,6 +397,29 @@ function UploadBox({
           </div>
         )}
       </label>
+    </div>
+  );
+}
+
+function ReadOnlyDocument({ label, url }: { label: string; url?: string }) {
+  return (
+    <div>
+      <p className="mb-2 text-sm text-gray-700">{label}</p>
+
+      <div className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-100 px-6 py-5 text-sm text-gray-600">
+        <span>{url ? 'Current document on file' : 'No document uploaded'}</span>
+
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-[#833700] hover:text-[#e87722]"
+          >
+            View
+          </a>
+        )}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   searchPropertiesServer,
   unlikePropertyServer,
   unsavePropertyServer,
+  updatePropertyServer,
   uploadPropertyServer,
   verifyBuyerPropertyServer,
 } from './property-service';
@@ -123,6 +124,19 @@ export async function saveProperty(propertyId: string): Promise<ApiResponse<null
 
 export async function unsaveProperty(propertyId: string): Promise<ApiResponse<null>> {
   const res = await unsavePropertyServer(propertyId);
+
+  if (res.statusCode >= 400) {
+    throw new Error(res.message);
+  }
+
+  return res;
+}
+
+export async function updateProperty(
+  propertyId: string,
+  formData: FormData,
+): Promise<ApiResponse<PropertyModel>> {
+  const res = await updatePropertyServer(propertyId, formData);
 
   if (res.statusCode >= 400) {
     throw new Error(res.message);

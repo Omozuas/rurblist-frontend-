@@ -1,6 +1,9 @@
 'use client';
 
+import { ImageModel } from '@/app/apis/models/image-model';
+import { useGetPropertyById } from '@/app/apis/mutations/use-property/use-get-property-by-id';
 import { useUploadProperty } from '@/app/apis/mutations/use-property/use-post-property';
+import { useUpdateProperty } from '@/app/apis/mutations/use-property/use-update-delete-property';
 import {
   COUNTRY_OPTIONS,
   NIGERIA_STATE_OPTIONS,
@@ -97,6 +100,8 @@ const AMENITIES = [
 export default function AddNewPropertyPage() {
   const setHideNavbar = useLayoutStore((state) => state.setHideNavbar);
   const router = useRouter();
+  const [propertyId, setPropertyId] = useState('');
+  const isEditMode = Boolean(propertyId);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -121,10 +126,15 @@ export default function AddNewPropertyPage() {
   });
   const compressing = false;
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<ImageModel[]>([]);
+  const [removedImagePublicIds, setRemovedImagePublicIds] = useState<string[]>([]);
   const [video, setVideo] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [showAmenities, setShowAmenities] = useState(false);
   const { mutate: uploadPropertyMutation, isPending } = useUploadProperty();
+  const { data: propertyData, isLoading: isLoadingProperty } = useGetPropertyById(propertyId);
+  const { mutate: updatePropertyMutation, isPending: isUpdating } = useUpdateProperty();
+  const property = propertyData?.data;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -247,7 +257,55 @@ console.log(data)
     setHideNavbar(true);
     return () => setHideNavbar(false);
   }, [setHideNavbar]);
-  const handleUploadProperty = async () => {
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPropertyId(new URLSearchParams(window.location.search).get('propertyId') || '');
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!property) return;
+
+    const timer = window.setTimeout(() => {
+      const [lng = '', lat = ''] = property.location?.coordinates?.coordinates ?? [];
+
+      setFormData({
+        title: property.title || '',
+        description: property.description || '',
+        type: property.type || '',
+        status: property.status || '',
+        price: String(property.price || ''),
+        bedrooms: String(property.bedrooms || ''),
+        bathrooms: String(property.bathrooms || ''),
+        size: String(property.size || ''),
+        furnishingStatus: property.furnishingStatus || 'Unfurnished',
+        paymentFrequency: property.paymentFrequency || '',
+        agentFee: String(property.agentFee || ''),
+        inspectionFee: String(property.inspectionFee || ''),
+        country: property.location?.country || 'Nigeria',
+        state: property.location?.state || '',
+        city: property.location?.city || '',
+        address: property.location?.address || '',
+        lat: String(lat || ''),
+        lng: String(lng || ''),
+      });
+      setAmenities(property.amenities || []);
+      setExistingImages(property.images || []);
+      setRemovedImagePublicIds([]);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [property]);
+
+  const handleRemoveExistingImage = (publicId: string) => {
+    setExistingImages((prev) => prev.filter((image) => image.public_id !== publicId));
+    setRemovedImagePublicIds((prev) => [...new Set([...prev, publicId])]);
+  };
+
+  const buildPropertyFormData = () => {
     const data = new FormData();
 
     data.append('title', formData.title);
@@ -296,14 +354,43 @@ console.log(data)
       console.log(file);
       data.append('images', file);
     });
+
+    removedImagePublicIds.forEach((publicId) => {
+      data.append('removedImagePublicIds', publicId);
+    });
+
+    return data;
+  };
+
+  const handleSubmitProperty = async () => {
+    const data = buildPropertyFormData();
+
     console.log('Uploading property...', { formData, amenities, images, video });
+
+    if (isEditMode) {
+      updatePropertyMutation(
+        { propertyId, data },
+        {
+          onSuccess: () => router.back(),
+        },
+      );
+      return;
+    }
+
     uploadPropertyMutation(data);
   };
   return (
     <div className="min-h-screen bg-white">
-      <ModalHeader title={'Add New Property'} onClose={() => router.back()} />
+      <ModalHeader
+        title={isEditMode ? 'Edit Property' : 'Add New Property'}
+        onClose={() => router.back()}
+      />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
+        {isLoadingProperty && isEditMode ? (
+          <AddPropertyFormSkeleton />
+        ) : (
+          <>
         {/* Basic Details */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-[#833700] mb-8">Basic Details</h2>
@@ -553,7 +640,55 @@ console.log(data)
           <h2 className="text-2xl font-bold text-[#833700] mb-8">Media Uploads</h2>
 
           <div className="space-y-8">
-            <ImageUpload label="Images" maxFiles={6} onUpload={setImages} gridCols={4} />
+            {isEditMode && existingImages.length > 0 && (
+              <div>
+                <p className="mb-4 text-[16px] font-medium text-[#3E3E3E]">Current Images</p>
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {existingImages.map((image) => (
+                    <div
+                      key={image.public_id}
+                      className="relative aspect-square overflow-hidden rounded-lg border border-[#808080] bg-gray-50"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image.url}
+                        alt="Property image"
+                        className="h-full w-full object-cover"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingImage(image.public_id)}
+                        className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                        aria-label="Remove existing image"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <ImageUpload
+              label={isEditMode ? 'Add New Images' : 'Images'}
+              maxFiles={Math.max(6 - existingImages.length, 0)}
+              onUpload={setImages}
+              gridCols={4}
+            />
 
             <ImageUpload
               label="Video (optional)"
@@ -574,13 +709,87 @@ console.log(data)
           <OrangeButton
             variant="orange"
             fullWidth
-            loading={isPending || compressing}
-            onClick={handleUploadProperty}
+            loading={isPending || isUpdating || compressing}
+            onClick={handleSubmitProperty}
           >
-            Upload property
+            {isEditMode ? 'Update property' : 'Upload property'}
           </OrangeButton>
         </div>
+          </>
+        )}
       </main>
     </div>
   );
+}
+
+function AddPropertyFormSkeleton() {
+  return (
+    <div className="animate-pulse space-y-12">
+      <SkeletonSection titleWidth="w-40">
+        <SkeletonInput />
+        <div>
+          <SkeletonLabel />
+          <div className="h-32 rounded-lg border border-gray-200 bg-gray-100" />
+        </div>
+      </SkeletonSection>
+
+      <SkeletonSection titleWidth="w-28">
+        <SkeletonInput />
+        <SkeletonInput />
+        <SkeletonInput />
+        <SkeletonInput />
+        <div className="grid grid-cols-2 gap-4">
+          <SkeletonInput />
+          <SkeletonInput />
+        </div>
+      </SkeletonSection>
+
+      <SkeletonSection titleWidth="w-56">
+        {Array.from({ length: 7 }).map((_, index) => (
+          <SkeletonInput key={index} />
+        ))}
+      </SkeletonSection>
+
+      <SkeletonSection titleWidth="w-32">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="aspect-square rounded-lg bg-gray-100" />
+          ))}
+        </div>
+      </SkeletonSection>
+
+      <div className="flex gap-4">
+        <div className="h-12 flex-1 rounded-lg bg-gray-100" />
+        <div className="h-12 flex-1 rounded-lg bg-gray-100" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonSection({
+  titleWidth,
+  children,
+}: {
+  titleWidth: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className={`mb-8 h-8 rounded bg-gray-100 ${titleWidth}`} />
+      <div className="space-y-6">{children}</div>
+    </div>
+  );
+}
+
+function SkeletonInput() {
+  return (
+    <div>
+      <SkeletonLabel />
+      <div className="h-14 rounded-lg border border-gray-200 bg-gray-100" />
+    </div>
+  );
+}
+
+function SkeletonLabel() {
+  return <div className="mb-2 h-4 w-32 rounded bg-gray-100" />;
 }
