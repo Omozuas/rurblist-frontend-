@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { queryTiming } from '../../react-query/query-options';
 import { getPlanById } from '../../services/plan-service/plan-service-client';
 
 export function useGetPlanById(id: string) {
@@ -8,6 +9,6 @@ export function useGetPlanById(id: string) {
     queryKey: ['plan-id', id],
     queryFn: () => getPlanById(id),
     enabled: !!id,
-    refetchOnWindowFocus: true,
+    ...queryTiming.detail,
   });
 }

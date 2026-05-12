@@ -1,33 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import BackNavbar from '@/components/agent-c/back-navbar';
 import { AgentInfoSection } from '@/components/agent-c/agent-info-section';
 import AgentInfoSectionSkeleton from '@/components/agent-c/agent-info-section-skeleton';
-import CurrentListingsSection from '@/components/agent-c/current-listings-section';
 import CurrentListingsSectionSkeleton from '@/components/agent-c/current-listings-section-skeleton';
-import MessagesSection from '@/components/agent-c/messaging/messages-section';
 import MessagesSectionSkeleton from '@/components/agent-c/messaging/messages-section-skeleton';
 import TourCardSkeleton from '@/components/homeseeker-c/loader-skeleton/tour-card-skeleton';
-import UpcomingToursSection from '@/components/homeseeker-c/upcoming-tours-section';
 import { useGetCurrentAgent } from '@/app/apis/mutations/use-agent/get-current-agent';
 import { useGetMyProperties } from '@/app/apis/mutations/use-property/use-get-my-properties';
 import { useLayoutStore } from '@/store/layout-store';
 import { useGetSavedProperties } from '@/app/apis/mutations/use-user/use-get-saved-property';
 import { useSaveProperty } from '@/app/apis/mutations/use-property/use-save-unsave-property';
 import SavedPropertiesSkeleton from '@/components/homeseeker-c/loader-skeleton/save-property-skeleton';
-import SavedPropertiesSection from '@/components/homeseeker-c/save-properties';
 import { useGetTourAgents } from '@/app/apis/mutations/use-tour/use-get-tour-agent';
 import { useGetTourUsers } from '@/app/apis/mutations/use-tour/use-get-tour-user';
 import { useCancelTour } from '@/app/apis/mutations/use-tour/use-cancel-tour';
 import { formatTourDate } from '@/app/apis/utils/format-tour-date';
 import { getLocalPropertyState, setLocalPropertyState } from '@/app/apis/utils/property-local-state';
 import { useGetVerifications } from '@/app/apis/mutations/use-verification/use-get-verifications-me';
-import PropertyVerificationsSection from '@/components/homeseeker-c/property-verifications-section';
 import PropertyVerificationsSkeleton from '@/components/homeseeker-c/loader-skeleton/property-verifications-skeleton';
 import { useDeleteProperty } from '@/app/apis/mutations/use-property/use-update-delete-property';
 import { OrangeButton } from '@/components/button/button';
+import { useDeferredReady } from '@/app/apis/hooks/use-deferred-ready';
+
+const CurrentListingsSection = dynamic(
+  () => import('@/components/agent-c/current-listings-section'),
+  { loading: () => <CurrentListingsSectionSkeleton /> },
+);
+
+const MessagesSection = dynamic(() => import('@/components/agent-c/messaging/messages-section'), {
+  loading: () => <MessagesSectionSkeleton />,
+});
+
+const UpcomingToursSection = dynamic(
+  () => import('@/components/homeseeker-c/upcoming-tours-section'),
+  { loading: () => <TourCardSkeleton /> },
+);
+
+const PropertyVerificationsSection = dynamic(
+  () => import('@/components/homeseeker-c/property-verifications-section'),
+  { loading: () => <PropertyVerificationsSkeleton /> },
+);
+
+const SavedPropertiesSection = dynamic(() => import('@/components/homeseeker-c/save-properties'), {
+  loading: () => <SavedPropertiesSkeleton />,
+});
 
 type Listing = {
   id: string;
@@ -43,13 +63,16 @@ type Listing = {
 export default function AgentPrivateProfilePage() {
   const setHideNavbar = useLayoutStore((state) => state.setHideNavbar);
   const router = useRouter();
+  const deferredReady = useDeferredReady(250);
   const { data, isLoading } = useGetCurrentAgent();
-  const { data: tour, isLoading: isFetching } = useGetTourAgents();
-  const { data: userTours, isLoading: isUserToursFetching } = useGetTourUsers();
-  const { data: propertiesData, isLoading: isPropertiesLoading } = useGetMyProperties();
+  const { data: tour, isLoading: isFetching } = useGetTourAgents(deferredReady);
+  const { data: userTours, isLoading: isUserToursFetching } = useGetTourUsers(deferredReady);
+  const { data: propertiesData, isLoading: isPropertiesLoading } =
+    useGetMyProperties(deferredReady);
   const { data: savedPropertiesData, isLoading: isSavedPropertiesLoading } =
-    useGetSavedProperties();
-  const { data: verificationsData, isLoading: isVerificationsLoading } = useGetVerifications();
+    useGetSavedProperties(deferredReady);
+  const { data: verificationsData, isLoading: isVerificationsLoading } =
+    useGetVerifications(deferredReady);
   const { unsave } = useSaveProperty();
   const { mutate: cancelTour } = useCancelTour();
   const { mutate: deleteProperty, isPending: isDeletingProperty } = useDeleteProperty();
@@ -66,7 +89,7 @@ export default function AgentPrivateProfilePage() {
   const currentAgent = agentData?.user;
   const currentUserId = currentAgent?._id;
   const isAgent = agentData?.isAgreement;
-  const properties = propertiesData?.data ?? [];
+  const properties = useMemo(() => propertiesData?.data ?? [], [propertiesData?.data]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -80,47 +103,59 @@ export default function AgentPrivateProfilePage() {
     return () => window.cancelAnimationFrame(frame);
   }, [currentUserId, savedPropertiesData?.data]);
 
-  const agent = {
-    name:
-      currentAgent?.fullName ||
-      [agentData?.firstName, agentData?.lastName].filter(Boolean).join(' ') ||
-      'Agent',
-    agency: agentData?.companyName || currentAgent?.roles?.[0] || 'Real estate agency',
-    experience: `${agentData?.yearsOfExperience ?? 0} years of experience`,
-    location:
-      [agentData?.city, agentData?.address].filter(Boolean).join(', ') || 'No location added',
-    image:
-      currentAgent?.profileImage?.url || agentData?.selfieUrl.url || '/image/profile-image2.jpg',
-    phone: currentAgent?.phoneNumber || 'No phone number added',
-    email: currentAgent?.email || 'No email added',
-    about:
-      agentData?.description || 'Create your agent profile to add your agency details and bio.',
-  };
+  const agent = useMemo(
+    () => ({
+      name:
+        currentAgent?.fullName ||
+        [agentData?.firstName, agentData?.lastName].filter(Boolean).join(' ') ||
+        'Agent',
+      agency: agentData?.companyName || currentAgent?.roles?.[0] || 'Real estate agency',
+      experience: `${agentData?.yearsOfExperience ?? 0} years of experience`,
+      location:
+        [agentData?.city, agentData?.address].filter(Boolean).join(', ') || 'No location added',
+      image:
+        currentAgent?.profileImage?.url || agentData?.selfieUrl.url || '/image/profile-image2.jpg',
+      phone: currentAgent?.phoneNumber || 'No phone number added',
+      email: currentAgent?.email || 'No email added',
+      about:
+        agentData?.description || 'Create your agent profile to add your agency details and bio.',
+    }),
+    [agentData, currentAgent],
+  );
 
-  const listings = properties.map((property) => ({
-    id: property._id,
-    title: property.title,
-    price: property.price,
-    status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms,
-    sqft: property.size,
-    image: property.images?.[0]?.url || '/image/image1.jpg',
-  }));
-  const saveListings = (savedPropertiesData?.data ?? [])
-    .filter((property) => !removedSavedIds.includes(property._id))
-    .map((property) => ({
-      id: property._id,
-      title: property.title,
-      price: property.price,
-      status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      sqft: property.size,
-      image: property.images?.[0]?.url || '/image/image1.jpg',
-    }));
+  const listings = useMemo(
+    () =>
+      properties.map((property) => ({
+        id: property._id,
+        title: property.title,
+        price: property.price,
+        status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        sqft: property.size,
+        image: property.images?.[0]?.url || '/image/image1.jpg',
+      })),
+    [properties],
+  );
 
-  const handleRemove = (id?: string) => {
+  const saveListings = useMemo(
+    () =>
+      (savedPropertiesData?.data ?? [])
+        .filter((property) => !removedSavedIds.includes(property._id))
+        .map((property) => ({
+          id: property._id,
+          title: property.title,
+          price: property.price,
+          status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          sqft: property.size,
+          image: property.images?.[0]?.url || '/image/image1.jpg',
+        })),
+    [removedSavedIds, savedPropertiesData?.data],
+  );
+
+  const handleRemove = useCallback((id?: string) => {
     if (!id) return;
 
     const previousIds = removedSavedIds;
@@ -136,9 +171,9 @@ export default function AgentPrivateProfilePage() {
         setLocalPropertyState(id, currentUserId, { isSaved: true });
       },
     });
-  };
+  }, [currentUserId, removedSavedIds, unsave]);
 
-  const handleCancelTour = (id: string) => {
+  const handleCancelTour = useCallback((id: string) => {
     if (loadingTourId === id) return;
 
     setLoadingTourId(id);
@@ -147,9 +182,9 @@ export default function AgentPrivateProfilePage() {
         setLoadingTourId(null);
       },
     });
-  };
+  }, [cancelTour, loadingTourId]);
 
-  const handleDeleteProperty = () => {
+  const handleDeleteProperty = useCallback(() => {
     if (!propertyToDelete) return;
 
     deleteProperty(propertyToDelete.id, {
@@ -157,56 +192,81 @@ export default function AgentPrivateProfilePage() {
         setPropertyToDelete(null);
       },
     });
-  };
-  // const messages: Array<{
-  //   id: string;
-  //   name: string;
-  //   message: string;
-  //   date: string;
-  //   property: string;
-  //   timestamp: string;
-  //   avatar?: string;
-  // }> = [];
-  const messages =
-    tour?.data?.map((t) => ({
-      id: t._id,
-      name: t.user?.fullName || 'Unknown User',
-      message: `Requested Tour: ${t.tourType === 'call' ? 'Virtual' : t.tourType === 'in-person' ? 'In-person' : 'Inspection'}`,
-      date: `Date & Time: ${formatTourDate(t.date)}`,
-      property: ` ${t.property?.title || 'No property'}`,
-      timestamp: new Date(t.createdAt).toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      }),
-      avatar: t.user?.profileImage?.url ?? t.agent?.selfieUrl?.url ?? undefined,
-      tour: t,
-    })) ?? [];
-  const tours =
-    userTours?.data?.map((t) => ({
-      id: t._id,
-      propertyTitle: t.property?.title || 'No property',
-      agentName: t.agent?.user?.fullName || 'No agent',
-      dateTime: formatTourDate(t.date),
-      status: t.status,
-      message: t.note,
-      tourType:
-        t.tourType === 'call'
-          ? 'Virtual Tour'
-          : t.tourType === 'inspection'
-            ? 'Inspection'
-            : 'In-Person Tour',
-    })) ?? [];
-  const verifications =
-    verificationsData?.data?.map((verification) => ({
-      id: verification._id,
-      propertyTitle: verification.property?.title || 'Property',
-      status: verification.status || 'pending',
-      stage: verification.currentStage?.title || 'Verification in progress',
-      date: verification.updatedAt || verification.createdAt,
-    })) ?? [];
+  }, [deleteProperty, propertyToDelete]);
+
+  const handleAgentAction = useCallback(() => {
+    router.push('/agent/request');
+  }, [router]);
+
+  const handleEditProperty = useCallback(
+    (id: string) => {
+      router.push(`/agent/add-property?propertyId=${id}`);
+    },
+    [router],
+  );
+
+  const handleDeletePropertyRequest = useCallback((property: Listing) => {
+    setPropertyToDelete(property);
+  }, []);
+
+  const handleOpenVerification = useCallback(
+    (verificationId: string) => {
+      router.push(`/verification?id=${verificationId}`);
+    },
+    [router],
+  );
+
+  const messages = useMemo(
+    () =>
+      tour?.data?.map((t) => ({
+        id: t._id,
+        name: t.user?.fullName || 'Unknown User',
+        message: `Requested Tour: ${t.tourType === 'call' ? 'Virtual' : t.tourType === 'in-person' ? 'In-person' : 'Inspection'}`,
+        date: `Date & Time: ${formatTourDate(t.date)}`,
+        property: ` ${t.property?.title || 'No property'}`,
+        timestamp: new Date(t.createdAt).toLocaleString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+        avatar: t.user?.profileImage?.url ?? t.agent?.selfieUrl?.url ?? undefined,
+        tour: t,
+      })) ?? [],
+    [tour?.data],
+  );
+
+  const tours = useMemo(
+    () =>
+      userTours?.data?.map((t) => ({
+        id: t._id,
+        propertyTitle: t.property?.title || 'No property',
+        agentName: t.agent?.user?.fullName || 'No agent',
+        dateTime: formatTourDate(t.date),
+        status: t.status,
+        message: t.note,
+        tourType:
+          t.tourType === 'call'
+            ? 'Virtual Tour'
+            : t.tourType === 'inspection'
+              ? 'Inspection'
+              : 'In-Person Tour',
+      })) ?? [],
+    [userTours?.data],
+  );
+
+  const verifications = useMemo(
+    () =>
+      verificationsData?.data?.map((verification) => ({
+        id: verification._id,
+        propertyTitle: verification.property?.title || 'Property',
+        status: verification.status || 'pending',
+        stage: verification.currentStage?.title || 'Verification in progress',
+        date: verification.updatedAt || verification.createdAt,
+      })) ?? [],
+    [verificationsData?.data],
+  );
 
   return (
     <div>
@@ -218,21 +278,25 @@ export default function AgentPrivateProfilePage() {
           <AgentInfoSection
             agent={agent}
             isCreateAgent={!isAgent}
-            onActionClick={() => router.push('/agent/request')}
+            onActionClick={handleAgentAction}
           />
         )}
-        {isPropertiesLoading ? (
+        {!deferredReady || isPropertiesLoading ? (
           <CurrentListingsSectionSkeleton />
         ) : (
           <CurrentListingsSection
             properties={listings}
-            onEditProperty={(id) => router.push(`/agent/add-property?propertyId=${id}`)}
-            onDeleteProperty={(property) => setPropertyToDelete(property)}
+            onEditProperty={handleEditProperty}
+            onDeleteProperty={handleDeletePropertyRequest}
           />
         )}
-        {isFetching ? <MessagesSectionSkeleton /> : <MessagesSection messages={messages} />}
+        {!deferredReady || isFetching ? (
+          <MessagesSectionSkeleton />
+        ) : (
+          <MessagesSection messages={messages} />
+        )}
         <div className="pt-2">
-          {isUserToursFetching ? (
+          {!deferredReady || isUserToursFetching ? (
             <TourCardSkeleton />
           ) : (
             <UpcomingToursSection
@@ -243,16 +307,16 @@ export default function AgentPrivateProfilePage() {
           )}
         </div>
         <div className="pt-2">
-          {isVerificationsLoading ? (
+          {!deferredReady || isVerificationsLoading ? (
             <PropertyVerificationsSkeleton />
           ) : (
             <PropertyVerificationsSection
               verifications={verifications}
-              onOpen={(verificationId) => router.push(`/verification?id=${verificationId}`)}
+              onOpen={handleOpenVerification}
             />
           )}
         </div>
-        {isSavedPropertiesLoading ? (
+        {!deferredReady || isSavedPropertiesLoading ? (
           <SavedPropertiesSkeleton />
         ) : (
           <SavedPropertiesSection properties={saveListings} onRemove={handleRemove} />

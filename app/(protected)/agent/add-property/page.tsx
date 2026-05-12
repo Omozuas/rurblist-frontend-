@@ -4,6 +4,8 @@ import { ImageModel } from '@/app/apis/models/image-model';
 import { useGetPropertyById } from '@/app/apis/mutations/use-property/use-get-property-by-id';
 import { useUploadProperty } from '@/app/apis/mutations/use-property/use-post-property';
 import { useUpdateProperty } from '@/app/apis/mutations/use-property/use-update-delete-property';
+import { compressImage } from '@/app/apis/utils/compress-image';
+import { getCachedCoordinates, setCachedCoordinates } from '@/app/apis/utils/geocode-cache';
 import {
   COUNTRY_OPTIONS,
   NIGERIA_STATE_OPTIONS,
@@ -124,13 +126,14 @@ export default function AddNewPropertyPage() {
     lat: '',
     lng: '',
   });
-  const compressing = false;
+  const [compressing, setCompressing] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<ImageModel[]>([]);
   const [removedImagePublicIds, setRemovedImagePublicIds] = useState<string[]>([]);
-  const [video, setVideo] = useState<File[]>([]);
+  const [, setVideo] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [showAmenities, setShowAmenities] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const { mutate: uploadPropertyMutation, isPending } = useUploadProperty();
   const { data: propertyData, isLoading: isLoadingProperty } = useGetPropertyById(propertyId);
   const { mutate: updatePropertyMutation, isPending: isUpdating } = useUpdateProperty();
@@ -176,81 +179,55 @@ export default function AddNewPropertyPage() {
     );
   };
 
-  /* // Mock geocode (replace with Google Maps / Mapbox later)
   const geocodeAddress = async (address: string) => {
-  try {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const cleanAddress = address.trim();
 
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        address
-      )}&key=${apiKey}`
-    );
+    if (!cleanAddress || isGeocoding) return;
 
-    const data = await res.json();
-   console.log(data)
-    if (data.results.length > 0) {
-      const location = data.results[0].geometry.location;
-
+    const cached = getCachedCoordinates(cleanAddress);
+    if (cached) {
       setFormData((prev) => ({
         ...prev,
-        latitude: location.lat,
-        longitude: location.lng,
+        lat: cached.lat,
+        lng: cached.lng,
       }));
+      return;
     }
-  } catch (error) {
-    console.error("Geocoding error:", error);
-  }
-};*/
 
-  /*
-const geocodeAddress = async (address: string) => {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json`
-    );
-
-    const data = await res.json();
-console.log(data)
-    if (data.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        latitude: data[0].lat,
-        longitude: data[0].lon,
-      }));
-    }
-  } catch (error) {
-    console.error("Geocode error:", error);
-  }
-};
-*/
-  const geocodeAddress = async (address: string) => {
     try {
+      setIsGeocoding(true);
       const apiKey = '78d12ab34db94bd29342fc69b9ff8b11';
 
       const res = await fetch(
         `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
-          address,
+          cleanAddress,
         )}&key=${apiKey}`,
       );
 
       const data = await res.json();
-      console.log(data);
       if (data.results.length > 0) {
         const { lat, lng } = data.results[0].geometry;
+        const coordinates = {
+          lat: String(lat),
+          lng: String(lng),
+        };
+
+        setCachedCoordinates(cleanAddress, coordinates);
 
         setFormData((prev) => ({
           ...prev,
-          lat: lat,
-          lng: lng,
+          lat: coordinates.lat,
+          lng: coordinates.lng,
         }));
       }
     } catch (error) {
       console.error('Geocoding error:', error);
+    } finally {
+      setIsGeocoding(false);
     }
   };
   const handleSaveDraft = () => {
-    console.log('Saving draft...', { formData, amenities });
+    // TODO: connect draft persistence when the backend supports it.
   };
 
   useEffect(() => {
@@ -305,7 +282,7 @@ console.log(data)
     setRemovedImagePublicIds((prev) => [...new Set([...prev, publicId])]);
   };
 
-  const buildPropertyFormData = () => {
+  const buildPropertyFormData = async () => {
     const data = new FormData();
 
     data.append('title', formData.title);
@@ -337,22 +314,17 @@ console.log(data)
     data.append('lat', String(formData.lat));
     data.append('lng', String(formData.lng));
 
-    // compress images before uploading
-    /*  setCompressing(true);
+    setCompressing(true);
+    let compressedImages: File[] = [];
 
-    const compressedImages = await Promise.all(
-    images.map((file) => compressImage(file))
-    );
+    try {
+      compressedImages = await Promise.all(images.map((file) => compressImage(file)));
+    } finally {
+      setCompressing(false);
+    }
 
     compressedImages.forEach((file) => {
-    console.log(file);
-    data.append("images", file);
-    });
-
-    setCompressing(false);*/
-    images.forEach((file) => {
-      console.log(file);
-      data.append('images', file);
+      data.append('images', file, file.name);
     });
 
     removedImagePublicIds.forEach((publicId) => {
@@ -363,9 +335,7 @@ console.log(data)
   };
 
   const handleSubmitProperty = async () => {
-    const data = buildPropertyFormData();
-
-    console.log('Uploading property...', { formData, amenities, images, video });
+    const data = await buildPropertyFormData();
 
     if (isEditMode) {
       updatePropertyMutation(
@@ -391,330 +361,339 @@ console.log(data)
           <AddPropertyFormSkeleton />
         ) : (
           <>
-        {/* Basic Details */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-[#833700] mb-8">Basic Details</h2>
+            {/* Basic Details */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-[#833700] mb-8">Basic Details</h2>
 
-          <div className="space-y-6">
-            <Input
-              label="Property title"
-              name="title"
-              className="p-4"
-              placeholder="E.g A luxury 2 bedroom flat"
-              value={formData.title}
-              onChange={handleInputChange}
-            />
+              <div className="space-y-6">
+                <Input
+                  label="Property title"
+                  name="title"
+                  className="p-4"
+                  placeholder="E.g A luxury 2 bedroom flat"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                />
 
-            <div>
-              <label className="block text-[16px] text-[#3E3E3E] mb-2">Description</label>
-              <textarea
-                name="description"
-                placeholder="Describe the property in full"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e87722] resize-none h-32"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Location */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-[#833700] mb-8">Location</h2>
-
-          <div className="space-y-6">
-            <SearchableDropdown
-              label="Country"
-              placeholder="Select country"
-              searchPlaceholder="Search country"
-              options={COUNTRY_OPTIONS}
-              value={formData.country}
-              onChange={(value) => handleLocationDropdownChange('country', value)}
-            />
-
-            <SearchableDropdown
-              label="State"
-              placeholder="Select state"
-              searchPlaceholder="Search state"
-              options={formData.country === 'Nigeria' ? NIGERIA_STATE_OPTIONS : []}
-              value={formData.state}
-              onChange={(value) => handleLocationDropdownChange('state', value)}
-              disabled={formData.country !== 'Nigeria'}
-            />
-
-            <SearchableDropdown
-              label="City"
-              placeholder="Select city"
-              searchPlaceholder="Search city"
-              options={getCityOptions(formData.state)}
-              value={formData.city}
-              onChange={(value) => handleLocationDropdownChange('city', value)}
-              disabled={!formData.state}
-            />
-
-            <Input
-              label="Address"
-              name="address"
-              className="p-4"
-              placeholder="Enter full address"
-              value={formData.address}
-              onChange={(e) => {
-                handleInputChange(e);
-              }}
-              onBlur={(e) => {
-                if (e.target.value.trim()) {
-                  geocodeAddress(e.target.value);
-                }
-              }}
-            />
-
-            {formData.lat && (
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Latitude" value={formData.lat} className="p-4" readOnly />
-                <Input label="Longitude" value={formData.lng} className="p-4" readOnly />
+                <div>
+                  <label className="block text-[16px] text-[#3E3E3E] mb-2">Description</label>
+                  <textarea
+                    name="description"
+                    placeholder="Describe the property in full"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e87722] resize-none h-32"
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Property Specifications */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-[#833700] mb-8">Property Specifications</h2>
+            {/* Location */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-[#833700] mb-8">Location</h2>
 
-          <div className="space-y-6">
-            <Dropdown
-              label="Type"
-              placeholder="Select property type"
-              options={[
-                { value: 'Apartment', label: 'Apartment' },
-                { value: 'Bedsitter', label: 'Bedsitter' },
-                { value: 'Land', label: 'Land' },
-                { value: 'Commercial', label: 'Commercial' },
-                { value: 'Duplex', label: 'Duplex' },
-                { value: 'Self_contain', label: 'Self contain' },
-                { value: 'Flat', label: 'Flat' },
-                { value: 'Boys_quarters', label: 'Boys quarters' },
-                { value: 'Mansion', label: 'Mansion' },
-              ]}
-              value={formData.type}
-              onChange={(value) => handleDropdownChange('type', value)}
-            />
+              <div className="space-y-6">
+                <SearchableDropdown
+                  label="Country"
+                  placeholder="Select country"
+                  searchPlaceholder="Search country"
+                  options={COUNTRY_OPTIONS}
+                  value={formData.country}
+                  onChange={(value) => handleLocationDropdownChange('country', value)}
+                />
 
-            {/* Furnished only if not land */}
+                <SearchableDropdown
+                  label="State"
+                  placeholder="Select state"
+                  searchPlaceholder="Search state"
+                  options={formData.country === 'Nigeria' ? NIGERIA_STATE_OPTIONS : []}
+                  value={formData.state}
+                  onChange={(value) => handleLocationDropdownChange('state', value)}
+                  disabled={formData.country !== 'Nigeria'}
+                />
+
+                <SearchableDropdown
+                  label="City"
+                  placeholder="Select city"
+                  searchPlaceholder="Search city"
+                  options={getCityOptions(formData.state)}
+                  value={formData.city}
+                  onChange={(value) => handleLocationDropdownChange('city', value)}
+                  disabled={!formData.state}
+                />
+
+                <Input
+                  label="Address"
+                  name="address"
+                  className="p-4"
+                  placeholder="Enter full address"
+                  value={formData.address}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      geocodeAddress(e.target.value);
+                    }
+                  }}
+                />
+                {isGeocoding && (
+                  <p className="text-sm text-gray-500">Finding coordinates...</p>
+                )}
+
+                {formData.lat && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Latitude" value={formData.lat} className="p-4" readOnly />
+                    <Input label="Longitude" value={formData.lng} className="p-4" readOnly />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Property Specifications */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-[#833700] mb-8">Property Specifications</h2>
+
+              <div className="space-y-6">
+                <Dropdown
+                  label="Type"
+                  placeholder="Select property type"
+                  options={[
+                    { value: 'Apartment', label: 'Apartment' },
+                    { value: 'Bedsitter', label: 'Bedsitter' },
+                    { value: 'Land', label: 'Land' },
+                    { value: 'Commercial', label: 'Commercial' },
+                    { value: 'Duplex', label: 'Duplex' },
+                    { value: 'Self_contain', label: 'Self contain' },
+                    { value: 'Flat', label: 'Flat' },
+                    { value: 'Boys_quarters', label: 'Boys quarters' },
+                    { value: 'Mansion', label: 'Mansion' },
+                    { value: 'Detached Duplex', label: 'Detached Duplex' },
+                    { value: 'Penthouse', label: 'Penthouse' },
+                    { value: 'Bungalow', label: 'Bungalow' },
+                    { value: 'Villa', label: 'Villa' },
+                  ]}
+                  value={formData.type}
+                  onChange={(value) => handleDropdownChange('type', value)}
+                />
+
+                {/* Furnished only if not land */}
+                {formData.type !== 'Land' && (
+                  <Dropdown
+                    label="Furnishing Status"
+                    placeholder="Select furnishing"
+                    options={[
+                      { value: 'Furnished', label: 'Furnished' },
+                      { value: 'Unfurnished', label: 'Unfurnished' },
+                      { value: 'Semi_Furnished', label: 'Semi Furnished' },
+                    ]}
+                    value={formData.furnishingStatus}
+                    onChange={(value) => handleDropdownChange('furnishingStatus', value)}
+                  />
+                )}
+                {formData.status === 'For_Rent' && (
+                  <Dropdown
+                    label="Payment Frequency"
+                    placeholder="Select payment frequency"
+                    options={[
+                      { value: 'per_year', label: 'Per Year' },
+                      { value: 'per_month', label: 'Per Month' },
+                      { value: 'per_week', label: 'Per Week' },
+                    ]}
+                    value={formData.paymentFrequency}
+                    onChange={(value) => handleDropdownChange('paymentFrequency', value)}
+                  />
+                )}
+                <Dropdown
+                  label="Status"
+                  placeholder="For rent"
+                  options={[
+                    { value: 'For_Sale', label: 'For Sale' },
+                    { value: 'For_Rent', label: 'For Rent' },
+                    { value: 'Sold', label: 'Sold' },
+                  ]}
+                  value={formData.status}
+                  onChange={(value) => handleDropdownChange('status', value)}
+                />
+                {formData.type !== 'Land' && (
+                  <Input
+                    label="Bedrooms"
+                    name="bedrooms"
+                    type="number"
+                    className="p-4"
+                    value={formData.bedrooms}
+                    onChange={handleInputChange}
+                  />
+                )}
+                {formData.type !== 'Land' && (
+                  <Input
+                    label="Bathrooms"
+                    name="bathrooms"
+                    type="number"
+                    className="p-4"
+                    value={formData.bathrooms}
+                    onChange={handleInputChange}
+                  />
+                )}
+                <Input
+                  label="Price"
+                  name="price"
+                  className="p-4"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                />
+                <Input
+                  label="Agent Fee"
+                  name="agentFee"
+                  type="number"
+                  className="p-4"
+                  placeholder="Enter agent fee"
+                  value={formData.agentFee}
+                  onChange={handleInputChange}
+                />
+                <Input
+                  label="Inspection Fee"
+                  name="inspectionFee"
+                  type="number"
+                  className="p-4"
+                  placeholder="Enter inspection fee"
+                  value={formData.inspectionFee}
+                  onChange={handleInputChange}
+                />
+                <Input
+                  label="Property Size (sqft)"
+                  name="size"
+                  type="number"
+                  className="p-4"
+                  placeholder="Enter property size"
+                  value={formData.size}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            {/* Amenities */}
             {formData.type !== 'Land' && (
-              <Dropdown
-                label="Furnishing Status"
-                placeholder="Select furnishing"
-                options={[
-                  { value: 'Furnished', label: 'Furnished' },
-                  { value: 'Unfurnished', label: 'Unfurnished' },
-                  { value: 'Semi_Furnished', label: 'Semi Furnished' },
-                ]}
-                value={formData.furnishingStatus}
-                onChange={(value) => handleDropdownChange('furnishingStatus', value)}
-              />
-            )}
-            {formData.status === 'For_Rent' && (
-              <Dropdown
-                label="Payment Frequency"
-                placeholder="Select payment frequency"
-                options={[
-                  { value: 'per_year', label: 'Per Year' },
-                  { value: 'per_month', label: 'Per Month' },
-                  { value: 'per_week', label: 'Per Week' },
-                ]}
-                value={formData.paymentFrequency}
-                onChange={(value) => handleDropdownChange('paymentFrequency', value)}
-              />
-            )}
-            <Dropdown
-              label="Status"
-              placeholder="For rent"
-              options={[
-                { value: 'For_Sale', label: 'For Sale' },
-                { value: 'For_Rent', label: 'For Rent' },
-                { value: 'Sold', label: 'Sold' },
-              ]}
-              value={formData.status}
-              onChange={(value) => handleDropdownChange('status', value)}
-            />
-            {formData.type !== 'Land' && (
-              <Input
-                label="Bedrooms"
-                name="bedrooms"
-                type="number"
-                className="p-4"
-                value={formData.bedrooms}
-                onChange={handleInputChange}
-              />
-            )}
-            {formData.type !== 'Land' && (
-              <Input
-                label="Bathrooms"
-                name="bathrooms"
-                type="number"
-                className="p-4"
-                value={formData.bathrooms}
-                onChange={handleInputChange}
-              />
-            )}
-            <Input
-              label="Price"
-              name="price"
-              className="p-4"
-              value={formData.price}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="Agent Fee"
-              name="agentFee"
-              type="number"
-              className="p-4"
-              placeholder="Enter agent fee"
-              value={formData.agentFee}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="Inspection Fee"
-              name="inspectionFee"
-              type="number"
-              className="p-4"
-              placeholder="Enter inspection fee"
-              value={formData.inspectionFee}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="Property Size (sqft)"
-              name="size"
-              type="number"
-              className="p-4"
-              placeholder="Enter property size"
-              value={formData.size}
-              onChange={handleInputChange}
-            />
-          </div>
-        </div>
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-[#833700] mb-6">Amenities</h2>
 
-        {/* Amenities */}
-        {formData.type !== 'Land' && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-[#833700] mb-6">Amenities</h2>
-
-            <div className="relative">
-              <div
-                onClick={() => setShowAmenities(!showAmenities)}
-                className="border border-[#808080] rounded-lg p-4 cursor-pointer flex flex-wrap gap-2"
-              >
-                {amenities.length === 0 && <span className="text-gray-400">Select amenities</span>}
-
-                {amenities.map((item) => (
-                  <span
-                    key={item}
-                    className="bg-orange-100 text-[#e87722] px-3 py-1 rounded-full text-sm"
+                <div className="relative">
+                  <div
+                    onClick={() => setShowAmenities(!showAmenities)}
+                    className="border border-[#808080] rounded-lg p-4 cursor-pointer flex flex-wrap gap-2"
                   >
-                    {item}
-                  </span>
-                ))}
-              </div>
+                    {amenities.length === 0 && (
+                      <span className="text-gray-400">Select amenities</span>
+                    )}
 
-              {showAmenities && (
-                <div className="absolute z-20 bg-white border mt-2 rounded-lg shadow w-full p-4 grid grid-cols-2 gap-3">
-                  {AMENITIES.map((item) => (
-                    <label key={item} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={amenities.includes(item)}
-                        onChange={() => toggleAmenity(item)}
-                      />
-                      {item}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Media Upload */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-[#833700] mb-8">Media Uploads</h2>
-
-          <div className="space-y-8">
-            {isEditMode && existingImages.length > 0 && (
-              <div>
-                <p className="mb-4 text-[16px] font-medium text-[#3E3E3E]">Current Images</p>
-
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  {existingImages.map((image) => (
-                    <div
-                      key={image.public_id}
-                      className="relative aspect-square overflow-hidden rounded-lg border border-[#808080] bg-gray-50"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={image.url}
-                        alt="Property image"
-                        className="h-full w-full object-cover"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExistingImage(image.public_id)}
-                        className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
-                        aria-label="Remove existing image"
+                    {amenities.map((item) => (
+                      <span
+                        key={item}
+                        className="bg-orange-100 text-[#e87722] px-3 py-1 rounded-full text-sm"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  {showAmenities && (
+                    <div className="absolute z-20 bg-white border mt-2 rounded-lg shadow w-full p-4 grid grid-cols-2 gap-3">
+                      {AMENITIES.map((item) => (
+                        <label key={item} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={amenities.includes(item)}
+                            onChange={() => toggleAmenity(item)}
                           />
-                        </svg>
-                      </button>
+                          {item}
+                        </label>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
 
-            <ImageUpload
-              label={isEditMode ? 'Add New Images' : 'Images'}
-              maxFiles={Math.max(6 - existingImages.length, 0)}
-              onUpload={setImages}
-              gridCols={4}
-            />
+            {/* Media Upload */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-[#833700] mb-8">Media Uploads</h2>
 
-            <ImageUpload
-              label="Video (optional)"
-              maxFiles={1}
-              onUpload={setVideo}
-              gridCols={1}
-              isVideo
-            />
-          </div>
-        </div>
+              <div className="space-y-8">
+                {isEditMode && existingImages.length > 0 && (
+                  <div>
+                    <p className="mb-4 text-[16px] font-medium text-[#3E3E3E]">Current Images</p>
 
-        {/* Buttons */}
-        <div className="flex gap-4 mb-16">
-          <OrangeButton variant="gray" fullWidth onClick={handleSaveDraft}>
-            Save as draft
-          </OrangeButton>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      {existingImages.map((image) => (
+                        <div
+                          key={image.public_id}
+                          className="relative aspect-square overflow-hidden rounded-lg border border-[#808080] bg-gray-50"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={image.url}
+                            alt="Property image"
+                            className="h-full w-full object-cover"
+                          />
 
-          <OrangeButton
-            variant="orange"
-            fullWidth
-            loading={isPending || isUpdating || compressing}
-            onClick={handleSubmitProperty}
-          >
-            {isEditMode ? 'Update property' : 'Upload property'}
-          </OrangeButton>
-        </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExistingImage(image.public_id)}
+                            className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                            aria-label="Remove existing image"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <ImageUpload
+                  label={isEditMode ? 'Add New Images' : 'Images'}
+                  maxFiles={Math.max(6 - existingImages.length, 0)}
+                  onUpload={setImages}
+                  gridCols={4}
+                />
+
+                <ImageUpload
+                  label="Video (optional)"
+                  maxFiles={1}
+                  onUpload={setVideo}
+                  gridCols={1}
+                  isVideo
+                />
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-4 mb-16">
+              <OrangeButton variant="gray" fullWidth onClick={handleSaveDraft}>
+                Save as draft
+              </OrangeButton>
+
+              <OrangeButton
+                variant="orange"
+                fullWidth
+                loading={isPending || isUpdating || compressing}
+                onClick={handleSubmitProperty}
+              >
+                {isEditMode ? 'Update property' : 'Upload property'}
+              </OrangeButton>
+            </div>
           </>
         )}
       </main>

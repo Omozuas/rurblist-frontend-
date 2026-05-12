@@ -3,7 +3,7 @@
 
 import { currentUserModel } from '@/app/apis/models/user-model';
 import { useGetCurrentUser } from '@/app/apis/mutations/use-user/use-get-current-user';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
 type AuthContextType = {
   user: currentUserModel | null;
@@ -18,17 +18,15 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data, isLoading } = useGetCurrentUser();
   const user = data?.statusCode === 401 ? null : (data?.data ?? null);
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user: user,
-        isLoading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      isLoading,
+    }),
+    [user, isLoading],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

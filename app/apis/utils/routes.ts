@@ -144,7 +144,7 @@ export const agentRoutes: AppRoute[] = [
     path: '/agent/private',
     roles: ['Agent', 'Admin', 'Landlord'],
     title: 'Agent Private',
-    permissions: ['MANAGE_PROPERTIES'],
+    permissions: ['MANAGE_PROPERTIES', 'VIEW_PROFILE'],
   },
 
   {

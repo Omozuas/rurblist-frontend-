@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { memo } from "react";
+import { optimizeCloudinaryImage } from "@/app/apis/utils/cloudinary";
 
 type Props = {
   name?: string;
@@ -26,13 +28,14 @@ function getInitials(name?: string) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-export default function UserAvatar({ name, image }: Props) {
+function UserAvatar({ name, image }: Props) {
   const color = colors[(name?.length ?? 0) % colors.length];
+  const optimizedImage = optimizeCloudinaryImage(image, { width: 96 });
 
-  if (image) {
+  if (optimizedImage) {
     return (
       <Image
-        src={image}
+        src={optimizedImage}
         alt="profile"
         width={45}
         height={45}
@@ -49,3 +52,5 @@ export default function UserAvatar({ name, image }: Props) {
     </div>
   );
 }
+
+export default memo(UserAvatar);

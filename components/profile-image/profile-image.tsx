@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 
 interface ProfileImageProps {
   src?: string;
@@ -58,6 +59,7 @@ export default function ProfileImage({ src, alt, size = 'md', name, role }: Prof
   const showFallback = !src || imgError;
   const initials = getInitials(name || alt);
   const bgColor = getColorFromName(name || alt);
+  const optimizedSrc = optimizeCloudinaryImage(src, { width: sizeValue * 2 });
 
   return (
     <div className="flex items-center gap-3">
@@ -68,7 +70,7 @@ export default function ProfileImage({ src, alt, size = 'md', name, role }: Prof
       >
         {!showFallback ? (
           <Image
-            src={src as string}
+            src={optimizedSrc as string}
             alt={alt}
             fill
             className="object-cover"

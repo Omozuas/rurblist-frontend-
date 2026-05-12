@@ -5,8 +5,8 @@ import PaymentReceipt from '@/components/payment-ui/payment-receipt';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import TourSuccessModal from '../popUp/tour-popup';
-import { useGetCurrentUser } from '@/app/apis/mutations/use-user/use-get-current-user';
 import { useDownloadReceipt } from '@/app/apis/mutations/use-payment/use-get-download-recipt';
+import { useAuth } from '@/components/layout/auth-provider';
 
 function PaymentSuccessSkeleton() {
   return (
@@ -55,13 +55,12 @@ function PaymentSuccessSkeleton() {
 
 export default function PaymentSuccessClient({ reference }: { reference: string }) {
   const router = useRouter();
-  const { data: userData, isLoading: isUserLoading } = useGetCurrentUser();
+  const { user, isLoading: isUserLoading } = useAuth();
 
   const { data, isLoading, isError } = useGetPaymentDeails(reference);
   const { mutate: downloadReceipt, isPending } = useDownloadReceipt();
 
   const info = data?.data;
-  const user = userData?.statusCode === 401 ? null : (userData?.data ?? null);
   const [open, setOpen] = useState(false);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

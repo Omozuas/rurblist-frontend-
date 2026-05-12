@@ -45,6 +45,7 @@ export default function CurrentListingsSection({
         <OrangeButton
           className="font-[Nunito] font-medium"
           iconSrc="/icons/plus-circle.svg"
+          onMouseEnter={() => router.prefetch('/agent/add-property')}
           onClick={() => {
             router.push('/agent/add-property');
           }}
@@ -68,7 +69,11 @@ export default function CurrentListingsSection({
             key={property.id}
             {...property}
             showControls
-            onEdit={(id) => id && onEditProperty?.(id)}
+            onEdit={(id) => {
+              if (!id) return;
+              router.prefetch(`/agent/add-property?propertyId=${id}`);
+              onEditProperty?.(id);
+            }}
             onDelete={() => onDeleteProperty?.(property)}
           />
         ))}

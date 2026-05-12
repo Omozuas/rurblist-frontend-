@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDebouncedValue } from '@/app/apis/hooks/use-debounced-value';
 import { useSearchProperties } from '@/app/apis/mutations/use-property/use-search-properties';
 import { PropertyModel } from '@/app/apis/models/property-model';
 import { useAuth } from '@/components/layout/auth-provider';
@@ -44,12 +45,13 @@ export default function PropertiesClient({
   const [selectedCategory, setSelectedCategory] = useState(initialType);
   const [beds, setBeds] = useState<number | undefined>();
   const [baths, setBaths] = useState<number | undefined>();
-  const user = useAuth();
+  const { user: currentUser } = useAuth();
   const redirect = useRouter();
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 450);
 
   const searchParams = useMemo(() => {
     return {
-      search: searchQuery || undefined,
+      search: debouncedSearchQuery || undefined,
       status:
         selectedType === 'For_Sale'
           ? 'For_Sale'
@@ -67,7 +69,16 @@ export default function PropertiesClient({
       limit: 10,
       sort: '-createdAt',
     };
-  }, [searchQuery, selectedType, selectedCategory, selectedState, minPrice, maxPrice, beds, baths]);
+  }, [
+    debouncedSearchQuery,
+    selectedType,
+    selectedCategory,
+    selectedState,
+    minPrice,
+    maxPrice,
+    beds,
+    baths,
+  ]);
 
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isLoading } =
     useSearchProperties(searchParams);
@@ -109,13 +120,70 @@ export default function PropertiesClient({
     return Array.from(uniqueProperties.values());
   }, [data]);
 
+  const currentUserId = currentUser?.user._id ?? '';
+
+  const savedList = useMemo(
+    () => currentUser?.agent?.savedProperties ?? currentUser?.homeSeeker?.savedProperties ?? [],
+    [currentUser],
+  );
+
+  const handleOpenAgentProfile = useCallback(
+    (ownerUserId?: string) => {
+      if (!ownerUserId) return;
+      redirect.push(`/agent/profile/${ownerUserId}`);
+    },
+    [redirect],
+  );
+
+  const propertyCards = useMemo(
+    () =>
+      properties.map((idx) => {
+        const statusLabel = STATUS_MAP[idx.status] || idx.status;
+        const city = idx.location.city.replace(/"/g, '');
+        const state = idx.location.state.replace(/"/g, '');
+        const images = idx.images || [];
+        const mainImage = images.length > 0 ? images[0].url : '/image/image7.jpg';
+        const galleryImages = images.slice(1).map((img) => ({
+          id: img._id,
+          url: img.url,
+        }));
+
+        return {
+          id: idx._id,
+          listLike: idx.likes,
+          listunlike: idx.unlikes,
+          likeCount: idx.likesCount,
+          commentCount: idx.commentsCount,
+          unlikeCount: idx.unlikesCount,
+          agentFee: `NGN ${idx.agentFee.toLocaleString()}`,
+          savedList,
+          verificationStatus: idx.verificationStatus,
+          title: `${statusLabel} - ${idx.title}, ${city} ${state} state.`,
+          mainImage,
+          currentUserId,
+          galleryImages,
+          description: idx.description,
+          price: `NGN ${idx.price.toLocaleString()}`,
+          bedrooms: idx.bedrooms,
+          bathrooms: idx.bathrooms,
+          profileImage:
+            idx.owner?.selfieUrl?.url ||
+            idx.owner?.user?.profileImage.url ||
+            '/image/profile-img.png',
+          profileName:
+            `${idx.owner?.firstName ?? ''} ${idx.owner?.lastName ?? ''}`.trim() ||
+            `${idx.owner?.user.fullName}` ||
+            'Unknown',
+          createdAt: idx.createdAt,
+          ownerUserId: idx.owner?.user._id,
+        };
+      }),
+    [currentUserId, properties, savedList],
+  );
+
   if (isLoading && properties.length === 0) {
     return <PropertiesPageSkeleton />;
   }
-
-  const currentUser = user.user;
-  const savedList =
-    currentUser?.agent?.savedProperties ?? currentUser?.homeSeeker?.savedProperties ?? [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -155,58 +223,17 @@ export default function PropertiesClient({
           title="Buy Properties Safely!"
           description="With Rurblist Account, your money is secured while we ensure every property is verified"
           imageUrl="/image/banner-img.svg"
-          onLearnMore={() => console.log('Learn more clicked')}
+          onLearnMore={() => redirect.push('/property-advisory')}
         />
 
         <div className="space-y-6">
-          {properties.map((idx) => {
-            const statusLabel = STATUS_MAP[idx.status] || idx.status;
-            const city = idx.location.city.replace(/"/g, '');
-            const state = idx.location.state.replace(/"/g, '');
-            const images = idx.images || [];
-            const mainImage = images.length > 0 ? images[0].url : '/image/image7.jpg';
-            const galleryImages = images.slice(1).map((img) => ({
-              id: img._id,
-              url: img.url,
-            }));
-
-            return (
-              <PropertyCard
-                key={idx._id}
-                id={idx._id}
-                listLike={idx.likes}
-                listunlike={idx.unlikes}
-                likeCount={idx.likesCount}
-                commentCount={idx.commentsCount}
-                unlikeCount={idx.unlikesCount}
-                agentFee={`NGN ${idx.agentFee.toLocaleString()}`}
-                savedList={savedList}
-                verificationStatus={idx.verificationStatus}
-                title={`${statusLabel} - ${idx.title}, ${city} ${state} state.`}
-                mainImage={mainImage}
-                currentUserId={user.user?.user._id ?? ''}
-                galleryImages={galleryImages}
-                description={idx.description}
-                price={`NGN ${idx.price.toLocaleString()}`}
-                bedrooms={idx.bedrooms}
-                bathrooms={idx.bathrooms}
-                profileImage={
-                  idx.owner?.selfieUrl?.url ||
-                  idx.owner?.user?.profileImage.url ||
-                  '/image/profile-img.png'
-                }
-                profileName={
-                  `${idx.owner?.firstName ?? ''} ${idx.owner?.lastName ?? ''}`.trim() ||
-                  `${idx.owner?.user.fullName}` ||
-                  'Unknown'
-                }
-                createdAt={idx.createdAt}
-                onChatClick={() => {
-                  redirect.push(`/agent/profile/${idx.owner?.user._id}`);
-                }}
-              />
-            );
-          })}
+          {propertyCards.map(({ ownerUserId, ...property }) => (
+            <PropertyCard
+              key={property.id}
+              {...property}
+              onChatClick={() => handleOpenAgentProfile(ownerUserId)}
+            />
+          ))}
         </div>
         <div ref={loadMoreRef} className="mt-6 flex min-h-12 w-full items-center justify-center">
           {isFetchingNextPage && <LoadMoreSkeleton />}

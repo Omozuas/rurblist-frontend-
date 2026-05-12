@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useLayoutStore } from '@/store/layout-store';
 import BackNavbar from '@/components/agent-c/back-navbar';
 import HomeSeekerBasicInfoCard from '@/components/homeseeker-c/homeseeker-basicInfo-card';
-import UpcomingToursSection from '@/components/homeseeker-c/upcoming-tours-section';
-import SavedPropertiesSection from '@/components/homeseeker-c/save-properties';
-import { useGetCurrentUser } from '@/app/apis/mutations/use-user/use-get-current-user';
+import { useAuth } from '@/components/layout/auth-provider';
 import HomeSeekerBasicInfoSkeleton from '@/components/homeseeker-c/loader-skeleton/home-seeker-basicInfo-skeleton';
 import { useGetSavedProperties } from '@/app/apis/mutations/use-user/use-get-saved-property';
 import { useSaveProperty } from '@/app/apis/mutations/use-property/use-save-unsave-property';
@@ -17,42 +16,59 @@ import TourCardSkeleton from '@/components/homeseeker-c/loader-skeleton/tour-car
 import { formatTourDate } from '@/app/apis/utils/format-tour-date';
 import { useCancelTour } from '@/app/apis/mutations/use-tour/use-cancel-tour';
 import { useGetVerifications } from '@/app/apis/mutations/use-verification/use-get-verifications-me';
-import PropertyVerificationsSection from '@/components/homeseeker-c/property-verifications-section';
 import PropertyVerificationsSkeleton from '@/components/homeseeker-c/loader-skeleton/property-verifications-skeleton';
 import { getLocalPropertyState, setLocalPropertyState } from '@/app/apis/utils/property-local-state';
+import { useDeferredReady } from '@/app/apis/hooks/use-deferred-ready';
+
+const UpcomingToursSection = dynamic(
+  () => import('@/components/homeseeker-c/upcoming-tours-section'),
+  { loading: () => <TourCardSkeleton /> },
+);
+
+const PropertyVerificationsSection = dynamic(
+  () => import('@/components/homeseeker-c/property-verifications-section'),
+  { loading: () => <PropertyVerificationsSkeleton /> },
+);
+
+const SavedPropertiesSection = dynamic(() => import('@/components/homeseeker-c/save-properties'), {
+  loading: () => <SavedPropertiesSkeleton />,
+});
 
 export default function HouseSeekerProfilePage() {
   const setHideNavbar = useLayoutStore((s) => s.setHideNavbar);
   const router = useRouter();
+  const deferredReady = useDeferredReady(250);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [removedSavedIds, setRemovedSavedIds] = useState<string[]>([]);
-  const { data, isLoading } = useGetCurrentUser();
-  const { data: tour, isLoading: isFetching } = useGetTourUsers();
+  const { user: dataInfo, isLoading } = useAuth();
+  const { data: tour, isLoading: isFetching } = useGetTourUsers(deferredReady);
   const { data: savedPropertiesData, isLoading: isSavedPropertiesLoading } =
-    useGetSavedProperties();
+    useGetSavedProperties(deferredReady);
   const { data: verificationsData, isLoading: isVerificationsLoading } =
-    useGetVerifications();
+    useGetVerifications(deferredReady);
   const { unsave } = useSaveProperty();
   const { mutate: cancelTour } = useCancelTour();
-  const dataInfo = data?.data;
   const userData = dataInfo?.user;
   const currentUserId = userData?._id;
 
-  const tours =
-    tour?.data?.map((t) => ({
-      id: t._id,
-      propertyTitle: t.property?.title || 'No property',
-      agentName: t.agent?.user?.fullName || 'No agent',
-      dateTime: formatTourDate(t.date),
-      status: t.status,
-      message: t.note,
-      tourType:
-        t.tourType === 'call'
-          ? 'Virtual Tour'
-          : t.tourType === 'inspection'
-            ? 'Inspection'
-            : 'In-Person Tour',
-    })) ?? [];
+  const tours = useMemo(
+    () =>
+      tour?.data?.map((t) => ({
+        id: t._id,
+        propertyTitle: t.property?.title || 'No property',
+        agentName: t.agent?.user?.fullName || 'No agent',
+        dateTime: formatTourDate(t.date),
+        status: t.status,
+        message: t.note,
+        tourType:
+          t.tourType === 'call'
+            ? 'Virtual Tour'
+            : t.tourType === 'inspection'
+              ? 'Inspection'
+              : 'In-Person Tour',
+      })) ?? [],
+    [tour?.data],
+  );
   useEffect(() => {
     setHideNavbar(true);
     return () => setHideNavbar(false);
@@ -70,7 +86,7 @@ export default function HouseSeekerProfilePage() {
     return () => window.cancelAnimationFrame(frame);
   }, [currentUserId, savedPropertiesData?.data]);
 
-  const handleCancel = (id: string) => {
+  const handleCancel = useCallback((id: string) => {
     if (loadingId === id) return;
     setLoadingId(id);
 
@@ -79,29 +95,38 @@ export default function HouseSeekerProfilePage() {
         setLoadingId(null);
       },
     });
-  };
-  const listings = (savedPropertiesData?.data ?? [])
-    .filter((property) => !removedSavedIds.includes(property._id))
-    .map((property) => ({
-      id: property._id,
-      title: property.title,
-      price: property.price,
-      status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      sqft: property.size,
-      image: property.images?.[0]?.url || '/image/image1.jpg',
-    }));
-  const verifications =
-    verificationsData?.data?.map((verification) => ({
-      id: verification._id,
-      propertyTitle: verification.property?.title || 'Property',
-      status: verification.status || 'pending',
-      stage: verification.currentStage?.title || 'Verification in progress',
-      date: verification.updatedAt || verification.createdAt,
-    })) ?? [];
+  }, [cancelTour, loadingId]);
 
-  const handleRemove = (id?: string) => {
+  const listings = useMemo(
+    () =>
+      (savedPropertiesData?.data ?? [])
+        .filter((property) => !removedSavedIds.includes(property._id))
+        .map((property) => ({
+          id: property._id,
+          title: property.title,
+          price: property.price,
+          status: property.status as 'For_Rent' | 'For_Sale' | 'Sold',
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          sqft: property.size,
+          image: property.images?.[0]?.url || '/image/image1.jpg',
+        })),
+    [removedSavedIds, savedPropertiesData?.data],
+  );
+
+  const verifications = useMemo(
+    () =>
+      verificationsData?.data?.map((verification) => ({
+        id: verification._id,
+        propertyTitle: verification.property?.title || 'Property',
+        status: verification.status || 'pending',
+        stage: verification.currentStage?.title || 'Verification in progress',
+        date: verification.updatedAt || verification.createdAt,
+      })) ?? [],
+    [verificationsData?.data],
+  );
+
+  const handleRemove = useCallback((id?: string) => {
     if (!id) return;
 
     const previousIds = removedSavedIds;
@@ -117,7 +142,14 @@ export default function HouseSeekerProfilePage() {
         setLocalPropertyState(id, currentUserId, { isSaved: true });
       },
     });
-  };
+  }, [currentUserId, removedSavedIds, unsave]);
+
+  const handleOpenVerification = useCallback(
+    (verificationId: string) => {
+      router.push(`/verification?id=${verificationId}`);
+    },
+    [router],
+  );
 
   return (
     <div>
@@ -139,7 +171,7 @@ export default function HouseSeekerProfilePage() {
           )}
         </div>
         {/* Tours */}
-        {isFetching ? (
+        {!deferredReady || isFetching ? (
           <TourCardSkeleton />
         ) : (
           <UpcomingToursSection
@@ -148,15 +180,15 @@ export default function HouseSeekerProfilePage() {
             loadingId={loadingId ?? undefined}
           />
         )}
-        {isVerificationsLoading ? (
+        {!deferredReady || isVerificationsLoading ? (
           <PropertyVerificationsSkeleton />
         ) : (
           <PropertyVerificationsSection
             verifications={verifications}
-            onOpen={(verificationId) => router.push(`/verification?id=${verificationId}`)}
+            onOpen={handleOpenVerification}
           />
         )}
-        {isSavedPropertiesLoading ? (
+        {!deferredReady || isSavedPropertiesLoading ? (
           <SavedPropertiesSkeleton />
         ) : (
           <SavedPropertiesSection properties={listings} onRemove={handleRemove} />

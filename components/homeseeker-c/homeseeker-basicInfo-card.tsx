@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 
 interface HomeSeekerBasicInfoCardProps {
   name: string;
@@ -17,10 +18,18 @@ export default function HomeSeekerBasicInfoCard({
   image,
   address,
 }: HomeSeekerBasicInfoCardProps) {
+  const optimizedImage = optimizeCloudinaryImage(image, { width: 200 });
+
   return (
     <div className="border rounded-xl p-6 flex items-center gap-6 bg-white">
       <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-        <Image src={image} alt={name} fill className="object-cover" />
+        <Image
+          src={optimizedImage || '/image/profile-image2.jpg'}
+          alt={name}
+          fill
+          sizes="96px"
+          className="object-cover"
+        />
       </div>
 
       <div className="space-y-1">

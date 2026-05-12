@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import { memo } from 'react';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 import { IconImage } from '../icon-image/icon-image';
 import { useRouter } from 'next/navigation';
 
@@ -22,7 +24,7 @@ interface PropertyCardProps {
   onRemove?: (id?: string) => void;
 }
 
-export default function PropertyCard({
+function PropertyCard({
   id,
   image,
   title,
@@ -38,9 +40,17 @@ export default function PropertyCard({
   onRemove,
 }: PropertyCardProps) {
   const router = useRouter();
+  const optimizedImage = optimizeCloudinaryImage(image, { width: 640 });
+  const handlePrefetchProperty = () => {
+    if (!id) return;
+    router.prefetch(`/property/${id}`);
+  };
+
   return (
     <div
       onClick={() => router.push(`/property/${id}`)}
+      onMouseEnter={handlePrefetchProperty}
+      onFocus={handlePrefetchProperty}
       className="
         group
         bg-white
@@ -57,12 +67,10 @@ export default function PropertyCard({
       {/* Image */}
       <div className="relative w-full h-50 sm:h-60 lg:h-70 rounded-xl overflow-hidden">
         <Image
-          src={image}
+          src={optimizedImage || '/image/image1.jpg'}
           alt={title}
           fill
-          sizes="(max-width: 640px) 100vw,
-                 (max-width: 1024px) 50vw,
-                 33vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className="
             object-cover
             transition-transform
@@ -180,3 +188,5 @@ export default function PropertyCard({
     </div>
   );
 }
+
+export default memo(PropertyCard);

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { OrangeButton } from '@/components/button/button';
 import { NavLink } from './nav-links';
@@ -13,6 +14,7 @@ import { useLogout } from '@/app/apis/mutations/use-auth/use-logout';
 
 export default function Navbar() {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const desktopProfileRef = useRef<HTMLDivElement>(null);
@@ -22,6 +24,9 @@ export default function Navbar() {
 
   const avatarName = safeUser?.fullName ?? 'User';
   const avatarImage = safeUser?.profileImage?.url ?? user?.agent?.selfieUrl?.url ?? undefined;
+  const profilePath = user?.user?.roles?.includes('Home_Seeker')
+    ? '/house-seeker/profile'
+    : '/agent/private';
   const navRoutes = useMemo(
     () => getNavbarRoutes((safeUser?.roles ?? []) as Role[]),
     [safeUser?.roles],
@@ -120,12 +125,9 @@ export default function Navbar() {
                     "
                     >
                       <Link
-                        href={
-                          user?.user?.roles?.includes('Home_Seeker')
-                            ? '/house-seeker/profile'
-                            : '/agent/private'
-                        }
+                        href={profilePath}
                         className="block px-4 py-3 text-sm hover:bg-gray-50"
+                        onMouseEnter={() => router.prefetch(profilePath)}
                         onClick={() => setProfileOpen(false)}
                       >
                         Profile
@@ -265,12 +267,9 @@ export default function Navbar() {
                     "
                     >
                       <Link
-                        href={
-                          user?.user?.roles?.includes('Home_Seeker')
-                            ? '/house-seeker/profile'
-                            : '/agent/private'
-                        }
+                        href={profilePath}
                         className="block px-4 py-3 text-sm hover:bg-gray-50"
+                        onMouseEnter={() => router.prefetch(profilePath)}
                         onClick={() => setProfileOpen(false)}
                       >
                         Profile

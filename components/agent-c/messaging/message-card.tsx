@@ -1,10 +1,15 @@
 'use client';
 
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import ConfirmTourModal from '../modal/confirm-tour-modal';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 import { TourModel2 } from '@/app/apis/models/tour-model';
 import { formatTourDate } from '@/app/apis/utils/format-tour-date';
+
+const ConfirmTourModal = dynamic(() => import('../modal/confirm-tour-modal'), {
+  ssr: false,
+});
 
 interface MessageCardProps {
   name: string;
@@ -35,13 +40,21 @@ export default function MessageCard({
   tour,
 }: MessageCardProps) {
   const [openModal, setOpenModal] = useState(false);
+  const optimizedAvatar = optimizeCloudinaryImage(avatar, { width: 96 });
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 transition hover:shadow-md">
       {/* Avatar + Name */}
       <div className="flex items-center gap-4 mb-4">
         <div className="relative w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-sm font-semibold text-gray-700">
-          {avatar ? (
-            <Image src={avatar} alt={name} fill className="object-cover" />
+          {optimizedAvatar ? (
+            <Image
+              src={optimizedAvatar}
+              alt={name}
+              fill
+              sizes="48px"
+              className="object-cover"
+            />
           ) : (
             getInitials(name)
           )}
@@ -67,15 +80,17 @@ export default function MessageCard({
       >
         Reply
       </button>
-      <ConfirmTourModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        property={property}
-        requester={name}
-        requestedDate={formatTourDate(tour.date)}
-        tourType={`${tour.tourType === 'call' ? 'Virtual' : tour.tourType === 'in-person' ? 'In-person' : 'Inspection'} Tour`}
-        tour={tour}
-      />
+      {openModal && (
+        <ConfirmTourModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          property={property}
+          requester={name}
+          requestedDate={formatTourDate(tour.date)}
+          tourType={`${tour.tourType === 'call' ? 'Virtual' : tour.tourType === 'in-person' ? 'In-person' : 'Inspection'} Tour`}
+          tour={tour}
+        />
+      )}
     </div>
   );
 }

@@ -2,20 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useCommentMutation } from '@/app/apis/mutations/use-comments/use-post-comment-reply';
 import { useLikeProperty } from '@/app/apis/mutations/use-property/use-like-unlike';
 import { useSaveProperty } from '@/app/apis/mutations/use-property/use-save-unsave-property';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 import {
   getLocalPropertyState,
   LocalPropertyReaction,
   setLocalPropertyState,
 } from '@/app/apis/utils/property-local-state';
 import { OrangeButton } from '../button/button';
-import CommentModal from '../comment/comment-modal';
 import { IconImage } from '../icon-image/icon-image';
 import ProfileImage from '../profile-image/profile-image';
 import ReadMoreText from '../read-more';
+
+const CommentModal = dynamic(() => import('../comment/comment-modal'), {
+  ssr: false,
+});
 
 interface GalleryImage {
   id: string;
@@ -139,11 +144,10 @@ export default function PropertyCard({
     setLocalPropertyState(id, currentUserId, nextState);
   };
 
-  const optimizeImage = (url: string) => url?.replace('/upload/', '/upload/w_800,q_auto,f_auto/');
   const displayImage =
     currentImageIndex === 0
-      ? optimizeImage(mainImage)
-      : optimizeImage(galleryImages[currentImageIndex - 1]?.url);
+      ? optimizeCloudinaryImage(mainImage, { width: 900 })
+      : optimizeCloudinaryImage(galleryImages[currentImageIndex - 1]?.url, { width: 900 });
 
   const formattedDate = new Date(createdAt).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -256,7 +260,13 @@ export default function PropertyCard({
         className="relative h-99.75 w-full cursor-pointer overflow-hidden"
         onClick={handleOpenProperty}
       >
-        <Image src={displayImage} alt={title} fill className="object-cover" />
+        <Image
+          src={displayImage || '/image/image7.jpg'}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 896px"
+          className="object-cover"
+        />
 
         <div
           className={`absolute left-4 top-4 rounded-full px-4 py-1 text-sm text-white ${
@@ -294,7 +304,13 @@ export default function PropertyCard({
             onClick={() => setCurrentImageIndex(idx)}
             className="relative h-25 w-40.75 overflow-hidden"
           >
-            <Image src={img.url} alt="gallery" fill className="object-cover" />
+            <Image
+              src={optimizeCloudinaryImage(img.url, { width: 180 }) || '/image/image7.jpg'}
+              alt="gallery"
+              fill
+              sizes="163px"
+              className="object-cover"
+            />
           </button>
         ))}
       </div>
@@ -403,11 +419,13 @@ export default function PropertyCard({
         </div>
       </div>
 
-      <CommentModal
-        isOpen={isCommentModalOpen}
-        onClose={() => setIsCommentModalOpen(false)}
-        id={id}
-      />
+      {isCommentModalOpen && (
+        <CommentModal
+          isOpen={isCommentModalOpen}
+          onClose={() => setIsCommentModalOpen(false)}
+          id={id}
+        />
+      )}
     </div>
   );
 }

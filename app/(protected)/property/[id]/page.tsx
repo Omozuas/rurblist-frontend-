@@ -1,15 +1,26 @@
 'use client';
 import { useGetPropertyById } from '@/app/apis/mutations/use-property/use-get-property-by-id';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 import AdvancedHeroGallery, { GalleryImage } from '@/components/property-cm/advanced-hero-gallery';
-import ContactCard from '@/components/property-cm/contact-card';
-import OtherProperties from '@/components/property-cm/other-properties';
 import PropertyDetails from '@/components/property-cm/property-details';
 import PropertyDetailSkeleton from '@/components/property-cm/property-detail-skeleton';
-import PropertyMap from '@/components/property-cm/property-map';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import toast from 'react-hot-toast';
 import { OrangeButton } from '@/components/button/button';
-import { useGetCurrentUser } from '@/app/apis/mutations/use-user/use-get-current-user';
+import { useAuth } from '@/components/layout/auth-provider';
+
+const ContactCard = dynamic(() => import('@/components/property-cm/contact-card'), {
+  loading: () => <SectionSkeleton className="h-80" />,
+});
+
+const OtherProperties = dynamic(() => import('@/components/property-cm/other-properties'), {
+  loading: () => <SectionSkeleton className="h-64" />,
+});
+
+const PropertyMap = dynamic(() => import('@/components/property-cm/property-map'), {
+  loading: () => <SectionSkeleton className="h-100" />,
+});
 
 export default function PropertyDetail() {
   const params = useParams();
@@ -17,9 +28,9 @@ export default function PropertyDetail() {
   const id = params.id as string;
 
   const { data, error, isLoading } = useGetPropertyById(id);
-  const { data: userData } = useGetCurrentUser();
+  const { user } = useAuth();
   const property = data?.data;
-  const currentUserId = userData?.data?.user?._id;
+  const currentUserId = user?.user?._id;
   const ownerUserId = property?.owner?.user?._id;
   const isOwner = !!currentUserId && !!ownerUserId && currentUserId === ownerUserId;
 
@@ -34,9 +45,15 @@ export default function PropertyDetail() {
   const images: GalleryImage[] =
     property?.images?.map((img) => ({
       id: img._id,
-      src: img.url,
+      src: optimizeCloudinaryImage(img.url, { width: 1200 }) || img.url,
       alt: property.title,
     })) ?? [];
+  const agentImage =
+    optimizeCloudinaryImage(
+      property?.owner.selfieUrl.url || property?.owner.user.profileImage.url || undefined,
+      { width: 180 },
+    ) || '/image/profile-image2.jpg';
+
   return (
     <div className="mt-17">
       <AdvancedHeroGallery images={images} autoPlay autoPlayInterval={4000} />
@@ -62,11 +79,7 @@ export default function PropertyDetail() {
           {/* RIGHT — Smaller */}
           <div className="lg:col-span-4">
             <ContactCard
-              agentImage={
-                property?.owner.selfieUrl.url ??
-                property?.owner.user.profileImage.url ??
-                '/image/profile-image2.jpg'
-              }
+              agentImage={agentImage}
               agentName={
                 `${property?.owner.firstName ?? ''} ${property?.owner.lastName ?? ''}`.trim() ||
                 'June Austen'
@@ -111,5 +124,11 @@ export default function PropertyDetail() {
         id={property?.owner.user._id ?? ''}
       />
     </div>
+  );
+}
+
+function SectionSkeleton({ className }: { className: string }) {
+  return (
+    <div className={`animate-pulse rounded-xl border border-gray-200 bg-gray-100 ${className}`} />
   );
 }

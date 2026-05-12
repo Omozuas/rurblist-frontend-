@@ -4,6 +4,7 @@ import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { ApiResponse } from '../../base-response';
 import { NextCursorModel } from '../../models/nextconsor-model';
 import { PropertyModel, PropertySearchParams } from '../../models/property-model';
+import { queryTiming } from '../../react-query/query-options';
 import { searchProperties } from '../../services/property-service/property-service-clientt';
 
 export function useSearchProperties(params: PropertySearchParams) {
@@ -29,6 +30,6 @@ export function useSearchProperties(params: PropertySearchParams) {
       return lastPage.nextCursor ?? undefined;
     },
 
-    placeholderData: (previousData) => previousData,
+    ...queryTiming.list,
   });
 }

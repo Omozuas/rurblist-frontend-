@@ -1,23 +1,24 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
       {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com", // ✅ ADD THIS
-        pathname: "/**",
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // ✅ ADD THIS
+        pathname: '/**',
       },
     ],
   },
   experimental: {
+    proxyClientMaxBodySize: '35mb',
     serverActions: {
-      bodySizeLimit: "25mb",
+      bodySizeLimit: '35mb',
     },
   },
 };

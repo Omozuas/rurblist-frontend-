@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { optimizeCloudinaryImage } from '@/app/apis/utils/cloudinary';
 
 interface AgentProfileCardProps {
   name: string;
@@ -17,11 +18,19 @@ export function AgentProfileCard({
   location,
   image,
 }: AgentProfileCardProps) {
+  const optimizedImage = optimizeCloudinaryImage(image, { width: 240 });
+
   return (
     <div className="flex items-center gap-4 rounded-xl border border-[#DEDEDE] bg-white p-4 sm:gap-6 sm:p-6">
       {/* Agent Image */}
       <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-27.5 md:h-27.5 rounded-lg overflow-hidden shrink-0">
-        <Image src={image} alt={name} fill className="object-cover" />
+        <Image
+          src={optimizedImage || '/image/profile-image2.jpg'}
+          alt={name}
+          fill
+          sizes="110px"
+          className="object-cover"
+        />
       </div>
 
       {/* Agent Info */}
