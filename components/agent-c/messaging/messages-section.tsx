@@ -3,6 +3,7 @@
 import { TourModel2 } from '@/app/apis/models/tour-model';
 import MessageCard from './message-card';
 import { IconImage } from '@/components/icon-image/icon-image';
+import LoadMoreTrigger from '@/components/load-more-trigger';
 
 interface Message {
   id: string;
@@ -17,9 +18,17 @@ interface Message {
 
 interface MessagesSectionProps {
   messages: Message[];
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export default function MessagesSection({ messages }: MessagesSectionProps) {
+export default function MessagesSection({
+  messages,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
+}: MessagesSectionProps) {
   return (
     <section className="mt-10 mb-10">
       {/* Header */}
@@ -49,6 +58,13 @@ export default function MessagesSection({ messages }: MessagesSectionProps) {
           No messages yet.
         </div>
       )}
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={messages.length > 0}
+      />
     </section>
   );
 }

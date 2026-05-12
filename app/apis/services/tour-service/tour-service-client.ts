@@ -1,6 +1,7 @@
 'use client';
 
 import { ApiResponse } from '../../base-response';
+import { NextCursorModel } from '../../models/nextconsor-model';
 import { BookInspectionPayload, TourModel, TourModel2 } from '../../models/tour-model';
 import {
   bookInspectionServer,
@@ -32,8 +33,10 @@ export async function getTourById(id: string): Promise<ApiResponse<TourModel2>> 
   return response;
 }
 
-export async function getTourAgent(): Promise<ApiResponse<TourModel2[]>> {
-  const response = await getTourAgentServer();
+export async function getTourAgent(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<TourModel2[]>> {
+  const response = await getTourAgentServer(cursor);
 
   if (response.statusCode >= 400) {
     throw new Error(response.message);
@@ -41,8 +44,10 @@ export async function getTourAgent(): Promise<ApiResponse<TourModel2[]>> {
   return response;
 }
 
-export async function getTourUser(): Promise<ApiResponse<TourModel2[]>> {
-  const response = await getTourUserServer();
+export async function getTourUser(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<TourModel2[]>> {
+  const response = await getTourUserServer(cursor);
 
   if (response.statusCode >= 400) {
     throw new Error(response.message);

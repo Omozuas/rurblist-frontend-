@@ -1,6 +1,7 @@
 'use client';
 
 import { IconImage } from '@/components/icon-image/icon-image';
+import LoadMoreTrigger from '../load-more-trigger';
 import { OrangeButton } from '../button/button';
 import PropertyCard from '../property-cm/property-card';
 import { useRouter } from 'next/navigation';
@@ -20,12 +21,18 @@ interface CurrentListingsSectionProps {
   properties: Property[];
   onEditProperty?: (id: string) => void;
   onDeleteProperty?: (property: Property) => void;
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export default function CurrentListingsSection({
   properties,
   onEditProperty,
   onDeleteProperty,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
 }: CurrentListingsSectionProps) {
   const router = useRouter();
   return (
@@ -83,6 +90,13 @@ export default function CurrentListingsSection({
           No properties found.
         </div>
       )}
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={properties.length > 0}
+      />
     </section>
   );
 }

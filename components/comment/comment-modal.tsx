@@ -6,6 +6,7 @@ import CommentModalSkeleton from './comment-modal-skeleton';
 import { usePropertyComments } from '@/app/apis/mutations/use-comments/use-get-comments';
 import { CommentModel } from '@/app/apis/models/comment-model';
 import { useAuth } from '../layout/auth-provider';
+import LoadMoreTrigger from '../load-more-trigger';
 
 interface CommentModalProps {
   isOpen: boolean;
@@ -74,16 +75,12 @@ export default function CommentModal({ isOpen, onClose, id }: CommentModalProps)
               />
             ))}
 
-          {/* Load More */}
-          {hasNextPage && (
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="w-full text-sm text-[#e87722] py-2"
-            >
-              {isFetchingNextPage ? 'Loading...' : 'Load more'}
-            </button>
-          )}
+          <LoadMoreTrigger
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onLoadMore={() => fetchNextPage()}
+            showNoMore={comments.length > 0}
+          />
 
           {/* Empty */}
           {!isLoading && comments.length === 0 && (

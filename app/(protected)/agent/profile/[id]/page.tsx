@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLayoutStore } from '@/store/layout-store';
 import BackNavbar from '@/components/agent-c/back-navbar';
 import AgentInfoSection from '@/components/agent-c/profile/agent-info';
@@ -18,7 +18,13 @@ export default function AgentProfilePage() {
   const params = useParams();
   const id = params.id as string;
   const { data, isLoading } = useGetAgentById(id);
-  const { data: propertiesData, isLoading: isPropertiesLoading } = useGetAgentPropertiesById(id);
+  const {
+    data: propertiesData,
+    isLoading: isPropertiesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetAgentPropertiesById(id);
 
   useEffect(() => {
     setHideNavbar(true);
@@ -27,7 +33,10 @@ export default function AgentProfilePage() {
 
   const agentData = data?.data;
   const currentAgent = agentData?.user;
-  const properties = propertiesData?.data ?? [];
+  const properties = useMemo(
+    () => propertiesData?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [propertiesData?.pages],
+  );
   const agent = {
     name:
       [agentData?.firstName, agentData?.lastName].filter(Boolean).join(' ') ||
@@ -77,7 +86,13 @@ export default function AgentProfilePage() {
       {isPropertiesLoading ? (
         <CurrentListingsSectionSkeleton />
       ) : (
-        <AgentPropertiesSection agentName={agent.name} properties={listings} />
+        <AgentPropertiesSection
+          agentName={agent.name}
+          properties={listings}
+          hasNextPage={hasNextPage}
+          isFetchingMore={isFetchingNextPage}
+          onLoadMore={() => fetchNextPage()}
+        />
       )}
 
       <RatingsSection

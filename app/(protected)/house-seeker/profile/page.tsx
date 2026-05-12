@@ -41,19 +41,39 @@ export default function HouseSeekerProfilePage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [removedSavedIds, setRemovedSavedIds] = useState<string[]>([]);
   const { user: dataInfo, isLoading } = useAuth();
-  const { data: tour, isLoading: isFetching } = useGetTourUsers(deferredReady);
-  const { data: savedPropertiesData, isLoading: isSavedPropertiesLoading } =
-    useGetSavedProperties(deferredReady);
-  const { data: verificationsData, isLoading: isVerificationsLoading } =
-    useGetVerifications(deferredReady);
+  const {
+    data: tour,
+    isLoading: isFetching,
+    fetchNextPage: fetchMoreTours,
+    hasNextPage: hasNextToursPage,
+    isFetchingNextPage: isFetchingMoreTours,
+  } = useGetTourUsers(deferredReady);
+  const {
+    data: savedPropertiesData,
+    isLoading: isSavedPropertiesLoading,
+    fetchNextPage: fetchMoreSavedProperties,
+    hasNextPage: hasNextSavedPropertiesPage,
+    isFetchingNextPage: isFetchingMoreSavedProperties,
+  } = useGetSavedProperties(deferredReady);
+  const {
+    data: verificationsData,
+    isLoading: isVerificationsLoading,
+    fetchNextPage: fetchMoreVerifications,
+    hasNextPage: hasNextVerificationsPage,
+    isFetchingNextPage: isFetchingMoreVerifications,
+  } = useGetVerifications(deferredReady);
   const { unsave } = useSaveProperty();
   const { mutate: cancelTour } = useCancelTour();
   const userData = dataInfo?.user;
   const currentUserId = userData?._id;
+  const savedProperties = useMemo(
+    () => savedPropertiesData?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [savedPropertiesData?.pages],
+  );
 
   const tours = useMemo(
     () =>
-      tour?.data?.map((t) => ({
+      tour?.pages.flatMap((page) => page.data ?? []).map((t) => ({
         id: t._id,
         propertyTitle: t.property?.title || 'No property',
         agentName: t.agent?.user?.fullName || 'No agent',
@@ -65,9 +85,9 @@ export default function HouseSeekerProfilePage() {
             ? 'Virtual Tour'
             : t.tourType === 'inspection'
               ? 'Inspection'
-              : 'In-Person Tour',
+            : 'In-Person Tour',
       })) ?? [],
-    [tour?.data],
+    [tour?.pages],
   );
   useEffect(() => {
     setHideNavbar(true);
@@ -76,7 +96,7 @@ export default function HouseSeekerProfilePage() {
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      const locallyUnsavedIds = (savedPropertiesData?.data ?? [])
+      const locallyUnsavedIds = savedProperties
         .filter((property) => getLocalPropertyState(property._id, currentUserId)?.isSaved === false)
         .map((property) => property._id);
 
@@ -84,7 +104,7 @@ export default function HouseSeekerProfilePage() {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [currentUserId, savedPropertiesData?.data]);
+  }, [currentUserId, savedProperties]);
 
   const handleCancel = useCallback((id: string) => {
     if (loadingId === id) return;
@@ -99,7 +119,7 @@ export default function HouseSeekerProfilePage() {
 
   const listings = useMemo(
     () =>
-      (savedPropertiesData?.data ?? [])
+      savedProperties
         .filter((property) => !removedSavedIds.includes(property._id))
         .map((property) => ({
           id: property._id,
@@ -111,19 +131,19 @@ export default function HouseSeekerProfilePage() {
           sqft: property.size,
           image: property.images?.[0]?.url || '/image/image1.jpg',
         })),
-    [removedSavedIds, savedPropertiesData?.data],
+    [removedSavedIds, savedProperties],
   );
 
   const verifications = useMemo(
     () =>
-      verificationsData?.data?.map((verification) => ({
+      verificationsData?.pages.flatMap((page) => page.data ?? []).map((verification) => ({
         id: verification._id,
         propertyTitle: verification.property?.title || 'Property',
         status: verification.status || 'pending',
         stage: verification.currentStage?.title || 'Verification in progress',
         date: verification.updatedAt || verification.createdAt,
       })) ?? [],
-    [verificationsData?.data],
+    [verificationsData?.pages],
   );
 
   const handleRemove = useCallback((id?: string) => {
@@ -178,6 +198,9 @@ export default function HouseSeekerProfilePage() {
             tours={tours}
             onCancelTour={handleCancel}
             loadingId={loadingId ?? undefined}
+            hasNextPage={hasNextToursPage}
+            isFetchingMore={isFetchingMoreTours}
+            onLoadMore={() => fetchMoreTours()}
           />
         )}
         {!deferredReady || isVerificationsLoading ? (
@@ -186,12 +209,21 @@ export default function HouseSeekerProfilePage() {
           <PropertyVerificationsSection
             verifications={verifications}
             onOpen={handleOpenVerification}
+            hasNextPage={hasNextVerificationsPage}
+            isFetchingMore={isFetchingMoreVerifications}
+            onLoadMore={() => fetchMoreVerifications()}
           />
         )}
         {!deferredReady || isSavedPropertiesLoading ? (
           <SavedPropertiesSkeleton />
         ) : (
-          <SavedPropertiesSection properties={listings} onRemove={handleRemove} />
+          <SavedPropertiesSection
+            properties={listings}
+            onRemove={handleRemove}
+            hasNextPage={hasNextSavedPropertiesPage}
+            isFetchingMore={isFetchingMoreSavedProperties}
+            onLoadMore={() => fetchMoreSavedProperties()}
+          />
         )}
       </div>
     </div>

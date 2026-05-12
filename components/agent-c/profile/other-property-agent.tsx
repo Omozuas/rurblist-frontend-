@@ -1,5 +1,6 @@
 'use client';
 
+import LoadMoreTrigger from '@/components/load-more-trigger';
 import PropertyCard from '@/components/property-cm/property-card';
 
 interface Property {
@@ -16,9 +17,18 @@ interface Property {
 interface Props {
   agentName: string;
   properties: Property[];
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export default function AgentPropertiesSection({ agentName, properties }: Props) {
+export default function AgentPropertiesSection({
+  agentName,
+  properties,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
+}: Props) {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       {/* Title */}
@@ -55,6 +65,13 @@ export default function AgentPropertiesSection({ agentName, properties }: Props)
           No properties found.
         </div>
       )}
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={properties.length > 0}
+      />
     </div>
   );
 }

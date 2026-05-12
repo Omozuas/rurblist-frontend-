@@ -1,5 +1,6 @@
 'use client';
 
+import LoadMoreTrigger from '../load-more-trigger';
 import PropertyCard from '../property-cm/property-card';
 
 interface Property {
@@ -17,11 +18,17 @@ interface SavedPropertiesSectionProps {
   properties: Property[];
   onRemove?: (id?: string) => void;
   removingId?: string; // optional for loading state later
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export default function SavedPropertiesSection({
   properties,
   onRemove,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
 }: SavedPropertiesSectionProps) {
   return (
     <div className="space-y-5">
@@ -59,6 +66,13 @@ export default function SavedPropertiesSection({
           No properties saved.
         </div>
       )}
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={properties.length > 0}
+      />
     </div>
   );
 }

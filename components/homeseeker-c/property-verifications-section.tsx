@@ -1,5 +1,7 @@
 'use client';
 
+import LoadMoreTrigger from '../load-more-trigger';
+
 type VerificationCard = {
   id: string;
   propertyTitle: string;
@@ -11,11 +13,17 @@ type VerificationCard = {
 type PropertyVerificationsSectionProps = {
   verifications: VerificationCard[];
   onOpen: (id: string) => void;
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
 export default function PropertyVerificationsSection({
   verifications,
   onOpen,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
 }: PropertyVerificationsSectionProps) {
   return (
     <section className="space-y-5">
@@ -51,6 +59,13 @@ export default function PropertyVerificationsSection({
           No property verifications yet.
         </div>
       )}
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={verifications.length > 0}
+      />
     </section>
   );
 }

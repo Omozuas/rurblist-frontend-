@@ -1,5 +1,6 @@
 'use client';
 
+import LoadMoreTrigger from '../load-more-trigger';
 import TourCard from './tour-card';
 
 interface Tour {
@@ -17,6 +18,9 @@ interface UpcomingToursSectionProps {
   onCancelTour?: (id: string) => void;
   loadingId?: string;
   participantLabel?: string;
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export default function UpcomingToursSection({
@@ -24,6 +28,9 @@ export default function UpcomingToursSection({
   onCancelTour,
   loadingId,
   participantLabel,
+  hasNextPage,
+  isFetchingMore,
+  onLoadMore,
 }: UpcomingToursSectionProps) {
   return (
     <div className="space-y-4">
@@ -63,6 +70,13 @@ export default function UpcomingToursSection({
           </div>
         )}
       </div>
+
+      <LoadMoreTrigger
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingMore}
+        onLoadMore={onLoadMore}
+        showNoMore={tours.length > 0}
+      />
     </div>
   );
 }

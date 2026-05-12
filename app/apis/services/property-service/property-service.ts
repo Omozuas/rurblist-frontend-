@@ -2,11 +2,17 @@
 
 import { ApiResponse } from '../../base-response';
 import { api } from '../../call-apis';
+import { NextCursorModel } from '../../models/nextconsor-model';
 import { PropertyModel, PropertySearchParams } from '../../models/property-model';
 import { currentUserModel } from '../../models/user-model';
+import { buildCursorQuery, DEFAULT_PAGE_LIMIT } from '../../utils/build-cursor-query';
 
-export async function getMyPropertiesServer(): Promise<ApiResponse<PropertyModel[]>> {
-  const res = await api.authGet<PropertyModel[]>('/property/my-properties');
+export async function getMyPropertiesServer(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<PropertyModel[]>> {
+  const res = await api.authGet<PropertyModel[]>(
+    `/property/my-properties${buildCursorQuery(cursor)}`,
+  );
 
   return res;
 }
@@ -19,8 +25,11 @@ export async function getPropertyByIdServer(id: string): Promise<ApiResponse<Pro
 
 export async function getAgentPropertiesByIdServer(
   id: string,
+  cursor?: NextCursorModel,
 ): Promise<ApiResponse<PropertyModel[]>> {
-  const res = await api.authGet<PropertyModel[]>(`/property/agent-properties/${id}`);
+  const res = await api.authGet<PropertyModel[]>(
+    `/property/agent-properties/${id}${buildCursorQuery(cursor)}`,
+  );
 
   return res;
 }
@@ -59,7 +68,7 @@ function buildQuery(params: PropertySearchParams): string {
   if (params.city) query.set('location.city', params.city);
   if (params.sort) query.set('sort', params.sort);
   if (params.page) query.set('page', String(params.page));
-  if (params.limit) query.set('limit', String(params.limit));
+  query.set('limit', String(params.limit ?? DEFAULT_PAGE_LIMIT));
   if (params.cursor) query.set('cursor', params.cursor);
 
   return query.toString();
@@ -69,7 +78,6 @@ export async function searchPropertiesServer(
   params: PropertySearchParams,
 ): Promise<ApiResponse<PropertyModel[]>> {
   const query = buildQuery(params);
-  console.log('API CALL:', `/property?${query}`);
   const res = await api.authGet<PropertyModel[]>(`/property?${query}`);
 
   return res;

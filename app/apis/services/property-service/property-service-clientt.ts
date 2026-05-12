@@ -1,6 +1,7 @@
 'use client';
 
 import { ApiResponse } from '../../base-response';
+import { NextCursorModel } from '../../models/nextconsor-model';
 import { PropertyModel, PropertySearchParams } from '../../models/property-model';
 import { currentUserModel } from '../../models/user-model';
 import {
@@ -18,8 +19,10 @@ import {
   verifyBuyerPropertyServer,
 } from './property-service';
 
-export async function getMyProperties(): Promise<ApiResponse<PropertyModel[]>> {
-  const res = await getMyPropertiesServer();
+export async function getMyProperties(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<PropertyModel[]>> {
+  const res = await getMyPropertiesServer(cursor);
 
   if (res.statusCode >= 400) {
     throw new Error(res.message);
@@ -38,8 +41,11 @@ export async function getPropertyById(id: string): Promise<ApiResponse<PropertyM
   return res;
 }
 
-export async function getAgentPropertiesById(id: string): Promise<ApiResponse<PropertyModel[]>> {
-  const res = await getAgentPropertiesByIdServer(id);
+export async function getAgentPropertiesById(
+  id: string,
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<PropertyModel[]>> {
+  const res = await getAgentPropertiesByIdServer(id, cursor);
 
   if (res.statusCode >= 400) {
     throw new Error(res.message);

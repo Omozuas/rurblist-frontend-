@@ -2,7 +2,9 @@
 
 import { ApiResponse } from '../../base-response';
 import { api } from '../../call-apis';
+import { NextCursorModel } from '../../models/nextconsor-model';
 import { BookInspectionPayload, TourModel, TourModel2 } from '../../models/tour-model';
+import { buildCursorQuery } from '../../utils/build-cursor-query';
 
 export async function bookInspectionServer(
   payload: BookInspectionPayload,
@@ -18,14 +20,18 @@ export async function getTourByIdServer(id: string): Promise<ApiResponse<TourMod
   return response;
 }
 
-export async function getTourUserServer(): Promise<ApiResponse<TourModel2[]>> {
-  const response = await api.authGet<TourModel2[]>(`/tours/user`);
+export async function getTourUserServer(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<TourModel2[]>> {
+  const response = await api.authGet<TourModel2[]>(`/tours/user${buildCursorQuery(cursor)}`);
 
   return response;
 }
 
-export async function getTourAgentServer(): Promise<ApiResponse<TourModel2[]>> {
-  const response = await api.authGet<TourModel2[]>(`/tours/agent`);
+export async function getTourAgentServer(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<TourModel2[]>> {
+  const response = await api.authGet<TourModel2[]>(`/tours/agent${buildCursorQuery(cursor)}`);
 
   return response;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebouncedValue } from '@/app/apis/hooks/use-debounced-value';
 import { useSearchProperties } from '@/app/apis/mutations/use-property/use-search-properties';
@@ -12,7 +12,7 @@ import {
   PriceFilter,
   TypeFilter,
 } from '@/components/dropdown/filter-dropdown';
-import LoadMoreSkeleton from '@/components/property-cm/load-more-skeleton';
+import LoadMoreTrigger from '@/components/load-more-trigger';
 import PropertiesPageSkeleton from '@/components/property-cm/properties-page-skeleton';
 import PropertyBanner from '@/components/property-details/property-banner';
 import PropertyCard from '@/components/property-details/property-card';
@@ -82,29 +82,6 @@ export default function PropertiesClient({
 
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isLoading } =
     useSearchProperties(searchParams);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const el = loadMoreRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      {
-        root: null,
-        rootMargin: '300px',
-        threshold: 0,
-      },
-    );
-
-    observer.observe(el);
-
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const properties = useMemo(() => {
     const uniqueProperties = new Map<string, PropertyModel>();
@@ -235,19 +212,12 @@ export default function PropertiesClient({
             />
           ))}
         </div>
-        <div ref={loadMoreRef} className="mt-6 flex min-h-12 w-full items-center justify-center">
-          {isFetchingNextPage && <LoadMoreSkeleton />}
-          {hasNextPage && !isFetchingNextPage && (
-            <button
-              type="button"
-              onClick={() => fetchNextPage()}
-              className="rounded-md border border-[#e87722] px-4 py-2 text-sm font-medium text-[#e87722] transition hover:bg-orange-50"
-            >
-              Load more
-            </button>
-          )}
-          {!hasNextPage && <p className="py-6 text-center text-gray-500">No more results</p>}
-        </div>
+        <LoadMoreTrigger
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={() => fetchNextPage()}
+          showNoMore={properties.length > 0}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { ApiResponse } from '../../base-response';
+import { NextCursorModel } from '../../models/nextconsor-model';
 import { PropertyModel } from '../../models/property-model';
 import { currentUserModel } from '../../models/user-model';
 import { getCurrentUserServer, getSavedPropertiesServer } from './user-services';
@@ -21,8 +22,10 @@ export async function getCurrentUser(): Promise<ApiResponse<currentUserModel>> {
   return res;
 }
 
-export async function getSavedProperties(): Promise<ApiResponse<PropertyModel[]>> {
-  const res = await getSavedPropertiesServer();
+export async function getSavedProperties(
+  cursor?: NextCursorModel,
+): Promise<ApiResponse<PropertyModel[]>> {
+  const res = await getSavedPropertiesServer(cursor);
   if (res.statusCode >= 400) {
     throw new Error(res.message);
   }

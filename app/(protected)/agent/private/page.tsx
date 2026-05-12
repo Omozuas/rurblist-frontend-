@@ -65,14 +65,41 @@ export default function AgentPrivateProfilePage() {
   const router = useRouter();
   const deferredReady = useDeferredReady(250);
   const { data, isLoading } = useGetCurrentAgent();
-  const { data: tour, isLoading: isFetching } = useGetTourAgents(deferredReady);
-  const { data: userTours, isLoading: isUserToursFetching } = useGetTourUsers(deferredReady);
-  const { data: propertiesData, isLoading: isPropertiesLoading } =
-    useGetMyProperties(deferredReady);
-  const { data: savedPropertiesData, isLoading: isSavedPropertiesLoading } =
-    useGetSavedProperties(deferredReady);
-  const { data: verificationsData, isLoading: isVerificationsLoading } =
-    useGetVerifications(deferredReady);
+  const {
+    data: tour,
+    isLoading: isFetching,
+    fetchNextPage: fetchMoreMessages,
+    hasNextPage: hasNextMessagesPage,
+    isFetchingNextPage: isFetchingMoreMessages,
+  } = useGetTourAgents(deferredReady);
+  const {
+    data: userTours,
+    isLoading: isUserToursFetching,
+    fetchNextPage: fetchMoreTours,
+    hasNextPage: hasNextToursPage,
+    isFetchingNextPage: isFetchingMoreTours,
+  } = useGetTourUsers(deferredReady);
+  const {
+    data: propertiesData,
+    isLoading: isPropertiesLoading,
+    fetchNextPage: fetchMoreProperties,
+    hasNextPage: hasNextPropertiesPage,
+    isFetchingNextPage: isFetchingMoreProperties,
+  } = useGetMyProperties(deferredReady);
+  const {
+    data: savedPropertiesData,
+    isLoading: isSavedPropertiesLoading,
+    fetchNextPage: fetchMoreSavedProperties,
+    hasNextPage: hasNextSavedPropertiesPage,
+    isFetchingNextPage: isFetchingMoreSavedProperties,
+  } = useGetSavedProperties(deferredReady);
+  const {
+    data: verificationsData,
+    isLoading: isVerificationsLoading,
+    fetchNextPage: fetchMoreVerifications,
+    hasNextPage: hasNextVerificationsPage,
+    isFetchingNextPage: isFetchingMoreVerifications,
+  } = useGetVerifications(deferredReady);
   const { unsave } = useSaveProperty();
   const { mutate: cancelTour } = useCancelTour();
   const { mutate: deleteProperty, isPending: isDeletingProperty } = useDeleteProperty();
@@ -89,11 +116,18 @@ export default function AgentPrivateProfilePage() {
   const currentAgent = agentData?.user;
   const currentUserId = currentAgent?._id;
   const isAgent = agentData?.isAgreement;
-  const properties = useMemo(() => propertiesData?.data ?? [], [propertiesData?.data]);
+  const properties = useMemo(
+    () => propertiesData?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [propertiesData?.pages],
+  );
+  const savedProperties = useMemo(
+    () => savedPropertiesData?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [savedPropertiesData?.pages],
+  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      const locallyUnsavedIds = (savedPropertiesData?.data ?? [])
+      const locallyUnsavedIds = savedProperties
         .filter((property) => getLocalPropertyState(property._id, currentUserId)?.isSaved === false)
         .map((property) => property._id);
 
@@ -101,7 +135,7 @@ export default function AgentPrivateProfilePage() {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [currentUserId, savedPropertiesData?.data]);
+  }, [currentUserId, savedProperties]);
 
   const agent = useMemo(
     () => ({
@@ -140,7 +174,7 @@ export default function AgentPrivateProfilePage() {
 
   const saveListings = useMemo(
     () =>
-      (savedPropertiesData?.data ?? [])
+      savedProperties
         .filter((property) => !removedSavedIds.includes(property._id))
         .map((property) => ({
           id: property._id,
@@ -152,7 +186,7 @@ export default function AgentPrivateProfilePage() {
           sqft: property.size,
           image: property.images?.[0]?.url || '/image/image1.jpg',
         })),
-    [removedSavedIds, savedPropertiesData?.data],
+    [removedSavedIds, savedProperties],
   );
 
   const handleRemove = useCallback((id?: string) => {
@@ -218,7 +252,7 @@ export default function AgentPrivateProfilePage() {
 
   const messages = useMemo(
     () =>
-      tour?.data?.map((t) => ({
+      tour?.pages.flatMap((page) => page.data ?? []).map((t) => ({
         id: t._id,
         name: t.user?.fullName || 'Unknown User',
         message: `Requested Tour: ${t.tourType === 'call' ? 'Virtual' : t.tourType === 'in-person' ? 'In-person' : 'Inspection'}`,
@@ -234,12 +268,12 @@ export default function AgentPrivateProfilePage() {
         avatar: t.user?.profileImage?.url ?? t.agent?.selfieUrl?.url ?? undefined,
         tour: t,
       })) ?? [],
-    [tour?.data],
+    [tour?.pages],
   );
 
   const tours = useMemo(
     () =>
-      userTours?.data?.map((t) => ({
+      userTours?.pages.flatMap((page) => page.data ?? []).map((t) => ({
         id: t._id,
         propertyTitle: t.property?.title || 'No property',
         agentName: t.agent?.user?.fullName || 'No agent',
@@ -253,19 +287,19 @@ export default function AgentPrivateProfilePage() {
               ? 'Inspection'
               : 'In-Person Tour',
       })) ?? [],
-    [userTours?.data],
+    [userTours?.pages],
   );
 
   const verifications = useMemo(
     () =>
-      verificationsData?.data?.map((verification) => ({
+      verificationsData?.pages.flatMap((page) => page.data ?? []).map((verification) => ({
         id: verification._id,
         propertyTitle: verification.property?.title || 'Property',
         status: verification.status || 'pending',
         stage: verification.currentStage?.title || 'Verification in progress',
         date: verification.updatedAt || verification.createdAt,
       })) ?? [],
-    [verificationsData?.data],
+    [verificationsData?.pages],
   );
 
   return (
@@ -288,12 +322,20 @@ export default function AgentPrivateProfilePage() {
             properties={listings}
             onEditProperty={handleEditProperty}
             onDeleteProperty={handleDeletePropertyRequest}
+            hasNextPage={hasNextPropertiesPage}
+            isFetchingMore={isFetchingMoreProperties}
+            onLoadMore={() => fetchMoreProperties()}
           />
         )}
         {!deferredReady || isFetching ? (
           <MessagesSectionSkeleton />
         ) : (
-          <MessagesSection messages={messages} />
+          <MessagesSection
+            messages={messages}
+            hasNextPage={hasNextMessagesPage}
+            isFetchingMore={isFetchingMoreMessages}
+            onLoadMore={() => fetchMoreMessages()}
+          />
         )}
         <div className="pt-2">
           {!deferredReady || isUserToursFetching ? (
@@ -303,6 +345,9 @@ export default function AgentPrivateProfilePage() {
               tours={tours}
               onCancelTour={handleCancelTour}
               loadingId={loadingTourId ?? undefined}
+              hasNextPage={hasNextToursPage}
+              isFetchingMore={isFetchingMoreTours}
+              onLoadMore={() => fetchMoreTours()}
             />
           )}
         </div>
@@ -313,13 +358,22 @@ export default function AgentPrivateProfilePage() {
             <PropertyVerificationsSection
               verifications={verifications}
               onOpen={handleOpenVerification}
+              hasNextPage={hasNextVerificationsPage}
+              isFetchingMore={isFetchingMoreVerifications}
+              onLoadMore={() => fetchMoreVerifications()}
             />
           )}
         </div>
         {!deferredReady || isSavedPropertiesLoading ? (
           <SavedPropertiesSkeleton />
         ) : (
-          <SavedPropertiesSection properties={saveListings} onRemove={handleRemove} />
+          <SavedPropertiesSection
+            properties={saveListings}
+            onRemove={handleRemove}
+            hasNextPage={hasNextSavedPropertiesPage}
+            isFetchingMore={isFetchingMoreSavedProperties}
+            onLoadMore={() => fetchMoreSavedProperties()}
+          />
         )}
       </div>
 
